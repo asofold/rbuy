@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -22,11 +23,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
 import com.sk89q.worldedit.BlockVector;
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+
 
 /**
  * Command based plugin.
@@ -35,9 +36,6 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
  * Internally lowercase keys are used, though names are stored case-sensitive.
  * (Fast dev.)
  * @author mc_dev
- * 
- * TODO: More checks when tas are expired (lazy but more frequent).
- * TODO: check if lowercase ist used in important places !
  *
  */
 public class Rbuy extends JavaPlugin{
@@ -55,7 +53,7 @@ public class Rbuy extends JavaPlugin{
 		@Override
 		public boolean onCommand(CommandSender sender, Command command,
 				String label, String[] args) {
-			return this.plugin.processComand(sender, command,label, args);
+			return this.plugin.processCommand(sender, command,label, args);
 		}
 		
 	}
@@ -87,6 +85,7 @@ public class Rbuy extends JavaPlugin{
 		}
 		public void toConfig( Configuration config, String prefix){
 			if (regionName == null) return; // set nothing.
+			config.setProperty(prefix+"regionName",	 regionName);
 			if ( benefits != null){
 				config.setProperty(prefix+"benefits", benefits);
 			}
@@ -169,19 +168,19 @@ public class Rbuy extends JavaPlugin{
 	String name = "Rbuy";
 	String version = "?";
 	
-	boolean active= false;
-	
 	String[] cmds = new String[]{
-			"rbuy", "rsell", "rlist", "rinfo", "rhelp", "rreload"
+			"rbuy", "rsell", "rlist", "rinfo", "rhelp", "rreload", "renable", "rdisable"
 		};
 	
 	Configuration currentConfig = null;
 	
 	
+	boolean active= false;
+	
 	/**
 	 * Number of regions one can buy during interval.
 	 */
-	int maxBuy = 3;
+	int maxBuy = 5;
 	
 	/**
 	 * Days that buying transactions count for the limit.
@@ -217,12 +216,12 @@ public class Rbuy extends JavaPlugin{
 	/**
 	 * 
 	 */
-	int distanceSell = 0;	
+	int distanceSell = 60;	
 	
 	/**
 	 * Radius for info command without arguments.
 	 */
-	int infoRadius = 50;
+	int infoRadius = 20;
 	
 	/**
 	 * Show all entries for list.
@@ -230,9 +229,24 @@ public class Rbuy extends JavaPlugin{
 	boolean showAll = true;
 	
 	/**
-	 * List all entries or only those that are within buying distance ?
+	 * Show own entries on info / list (?).
 	 */
-	boolean listAll = false;
+	boolean showOwn = false;
+	
+	/**
+	 * Strict boundary.
+	 */
+	int minMapHeight = 0;
+	
+	/**
+	 * Strict boundary
+	 */
+	int maxMapHeight = 127;
+	
+	boolean usersBuy = true;
+	
+	boolean usersSell = true;
+	
 	
 	
 	/**
@@ -244,9 +258,6 @@ public class Rbuy extends JavaPlugin{
 	 * Indicates whether saving is appropriate.
 	 */
 	boolean changed = false;
-	
-	int minMapHeight = 0;
-	int maxMapHeight = 127;
 	
 	/**
 	 * Offers by region name.
@@ -269,6 +280,7 @@ public class Rbuy extends JavaPlugin{
 	@Override
 	public void onDisable() {
 		this.active = false;
+		this.saveData();
 		System.out.println(this.getPluginDescr()+" is disabled.");
 	}
 	
@@ -284,8 +296,20 @@ public class Rbuy extends JavaPlugin{
 		this.version = pdf.getVersion();
 		this.name = pdf.getName();
 		
-		this.reloadConfig();
-		
+//		try{
+			this.reloadConfig();
+//		} catch ( Throwable t ){
+//			t.printStackTrace();
+//			getServer().getLogger().severe("rbuy - Failed to load configuration (set to inactive).");
+//			this.setActive(false);
+//		}
+//		try{
+			this.loadData();
+//		} catch ( Throwable t ){
+//			t.printStackTrace();
+//			getServer().getLogger().severe("rbuy - Failed to load data (set to inactive).");
+//			this.setActive(false);
+//		}
 		
 		CommandExecutor exe = new RbuyCommand(this);
 		for (String n : this.cmds ){
@@ -298,6 +322,17 @@ public class Rbuy extends JavaPlugin{
 		System.out.println(this.getPluginDescr()+" is enabled (active="+this.active+").");
 	}
 	
+	/**
+	 * Enable/disable during runtime (TODO)
+	 * @param b
+	 */
+	public void setActive(boolean b) {
+		this.active = b;
+		// TODO: save config ?
+	}
+
+
+
 	public Configuration getCurrentConfig(){
 		if ( this.currentConfig == null){
 			File file = new File(this.getDataFolder(), "rbuy.yml");
@@ -305,8 +340,9 @@ public class Rbuy extends JavaPlugin{
 				Configuration config = new Configuration(file);
 				config.load();
 				this.currentConfig = config;
+			} else{
+				this.setDefaultConfig();
 			}
-			this.setDefaultConfig();
 			this.applyConfig();
 		}
 		return this.currentConfig;
@@ -320,16 +356,45 @@ public class Rbuy extends JavaPlugin{
 
 	void applyConfig() {
 		// apply this.currentConfig
-		// TODO Auto-generated method stub
-		
+		Configuration config = this.currentConfig;
+		this.active = config.getBoolean("active", true);
+		this.usersBuy = config.getBoolean("users-buy", true);
+		this.usersSell = config.getBoolean("users-sell", true);
+		this.showOwn = config.getBoolean("show-own", false);
+		this.showAll = config.getBoolean("show-all", true);
+		this.minMapHeight = config.getInt("min-map-height", 0);
+		this.maxMapHeight = config.getInt("max-map-height", 127);
+		this.maxBuy = config.getInt("max-buy", 5);
+		this.timeCountBuy= config.getInt("time-count-buy", 10);
+		this.maxArea = getLong(config, "max-area", (long) 0);
+		this.timeCountArea = config.getInt("time-count-area", 10);
+		this.maxOffers = config.getInt("max-offers", 3);
+		this.timeForgetTransaction = config.getInt("time-forget-transaction", 21);
+		this.distanceBuy = config.getInt("distance-buy", 30);
+		this.distanceSell = config.getInt("distance-sell", 50);
+		this.infoRadius = config.getInt("info-radius", 10);
 	}
 
 	private void setDefaultConfig() {
 		// create and safe default configuration.
 		File file = new File(this.getDataFolder(), "rbuy.yml");
 		Configuration config = new Configuration(file);
-		// TODO
-		
+		config.setProperty("active", true);
+		config.setProperty("users-buy", true);
+		config.setProperty("users-sell", true);
+		config.setProperty("show-own", false);
+		config.setProperty("show-all", true);
+		config.setProperty("min-map-height", 0);
+		config.setProperty("max-map-height", 127);
+		config.setProperty("max-buy", 5);
+		config.setProperty("time-count-buy", 10);
+		config.setProperty("max-area", 0);
+		config.setProperty("time-count-area", 10);
+		config.setProperty("max-offers", 3);
+		config.setProperty("time-forget-transaction", 21);
+		config.setProperty("distance-buy", 30);
+		config.setProperty("distance-sell", 50);
+		config.setProperty("info-radius", 5);
 		
 		if ( !config.save()){
 			getServer().getLogger().severe("Rbuy - failed to save default configuration.");
@@ -359,6 +424,7 @@ public class Rbuy extends JavaPlugin{
 		this.offers.clear();
 		this.transactions.clear();
 		this.infos.clear();
+		this.changed = false;
 		File file = new File( getDataFolder(), "runtime.yml");
 		if ( !file.exists() ) return;
 		Configuration config = new Configuration( file);
@@ -372,7 +438,7 @@ public class Rbuy extends JavaPlugin{
 		if (keys != null ){
 			for ( String key : keys){
 				Transaction ta = new Transaction();
-				if ( ta.fromConfig(config, prefix+"."+key)){
+				if ( ta.fromConfig(config, prefix+"."+key+".")){
 					// check if expired:
 					if ( ta.timestamp < tsLoad - timeForgetTransaction*msDay){
 						// ignore this one.
@@ -391,22 +457,25 @@ public class Rbuy extends JavaPlugin{
 		
 		// offers:
 		prefix = "offers";
+		keys = config.getKeys(prefix);
 		if (keys != null ){
 			for ( String key : keys){
 				Offer offer = new Offer();
-				if ( offer.fromConfig(config, prefix+"."+key)){
+				if ( offer.fromConfig(config, prefix+"."+key+".")){
 					PlayerInfo info = getPlayerInfo(offer.benefits); // TODO: check for null
 					info.offers.add(offer);
 					// TODO: check if already in ?
-					offers.put(offer.regionName, offer);
+					offers.put(offer.regionName.toLowerCase(), offer);
 				} else {
-					getServer().getLogger().warning("rbuy - Could not load transaction: "+key);
+					getServer().getLogger().warning("rbuy - Could not load offer: "+key);
 				}
 			}
 		}
+		System.out.println("rbuy - load data: "+offers.size() +" offers, "+transactions.size()+" transactions.");
 	}
 	
 	void saveData(){
+		if ( !active ) return; // policy - prevent
 		File file = new File( getDataFolder(), "runtime.yml");
 		Configuration config = new Configuration( file);
 		
@@ -432,14 +501,23 @@ public class Rbuy extends JavaPlugin{
 	}
 	
 	
-	public boolean processComand(CommandSender sender, Command command,
+	public boolean processCommand(CommandSender sender, Command command,
 			String label, String[] args) {
 		int length = args.length;
+		
+		if ( !active ) {
+			if (!label.equalsIgnoreCase("renable") && !label.equalsIgnoreCase("rreload")){
+				sender.sendMessage("rbuy - All functionality is disabled temporarily.");
+				return false;
+			}
+		}
+		
 		if ( label.equalsIgnoreCase("rhelp") || ( (label.equalsIgnoreCase("rbuy")) && (args.length>=1) && (args[0].equalsIgnoreCase("help")) ) ){
 			sender.sendMessage("rbuy - No help available, use /rbuy for a short comand listing.");
 			return true;
 		} else if ((length==0)&&(label.equalsIgnoreCase("rbuy"))){
-			sender.sendMessage("rbuy - /rbuy <region> | /rsell <region> <price> [<currency>] ; /rsell <region> ; /rsell | /rlist ; /rlist <player> | /rinfo <region> | /rreload | /rhelp");
+			sender.sendMessage("rbuy - /rbuy <region> | /rsell <region> <price> [<currency>] ; /rsell <region> ; /rsell | /rlist ; /rlist <player> | /rinfo <region> | /rreload | /renable ; /rdisable | /rhelp");
+			return true;
 		}
 		
 		if ( label.equalsIgnoreCase("rsell")){
@@ -449,6 +527,7 @@ public class Rbuy extends JavaPlugin{
 				sender.sendMessage("rbuy - Expect a player for using rsell.");
 				return false;
 			}
+			
 			Player player = (Player) sender;
 			if ( length == 1){
 				// remove region from  offers:
@@ -456,11 +535,15 @@ public class Rbuy extends JavaPlugin{
 				if ( this.changed ) this.saveData();
 				return res;
 			} else if ( (length == 3) || (length == 2)  ){
+				if ( !hasPermission(sender, "rbuy.sell")){
+					sender.sendMessage("rbuy - You don't have permission.");
+					return false;
+				}
 				boolean res = processOffer(player, args);
 				if ( this.changed ) this.saveData();
 				return res;
 			} else if (length == 0){
-				if ( sender instanceof Player){
+				if ( sender instanceof Player){ // cloning ?
 					this.sendOwnOffers((Player) sender);
 					return true;
 				} else {
@@ -473,6 +556,10 @@ public class Rbuy extends JavaPlugin{
 				return false;
 			}
 		} else if ( label.equalsIgnoreCase("rbuy")){
+			if ( !hasPermission(sender, "rbuy.buy")){
+				sender.sendMessage("rbuy - You don't have permission.");
+				return false;
+			}
 			if ( !(sender instanceof Player) ){
 				sender.sendMessage("rbuy - Expect a player for using rbuy.");
 				return false;
@@ -497,21 +584,38 @@ public class Rbuy extends JavaPlugin{
 				// most detailed info
 				showAllInfos(sender);
 			}
+			return true;
 		} else if (label.equalsIgnoreCase("rlist")){
 			// just show names
 			showAllOffers(sender);
+			return true;
 		} else if (label.equalsIgnoreCase("rreload")){
-			if ( sender.isOp()){
-				this.saveData();
-				this.reloadConfig();
-				this.loadData();
-				sender.sendMessage("Reloaded configuration.");
-			} else{
-				sender.sendMessage("rbuy - you need to be op to reload the configuration.");
+			if ( !hasPermission(sender, "rbuy.reload")){
+				sender.sendMessage("rbuy - You don't have permission.");
 				return false;
 			}
-			
-		} 
+			this.saveData();
+			this.reloadConfig();
+			this.loadData();
+			sender.sendMessage("Reloaded configuration.");
+			return true;		
+		}  else if ( label.equalsIgnoreCase("renable")){
+			if ( !hasPermission(sender, "rbuy.enable")){
+				sender.sendMessage("rbuy - You don't have permission.");
+				return false;
+			}
+			setActive(true);
+			sender.sendMessage("rbuy - Active (possibly till next reload, only).");
+			return true;
+		} else if ( label.equalsIgnoreCase("rdisable")){
+			if ( !hasPermission(sender, "rbuy.disable")){
+				sender.sendMessage("rbuy - You don't have permission.");
+				return false;
+			}
+			setActive(false);
+			sender.sendMessage("rbuy - Active (possibly till next reload, only).");
+			return true;
+		}
 		
 		sender.sendMessage("rbuy - unknown options/command: "+label);
 		return false;
@@ -520,42 +624,63 @@ public class Rbuy extends JavaPlugin{
 	private void showNearbyInfo(Player player) {
 		World world = player.getWorld();
 		String body = "";
-
+		
+		// TODO: WHY CLASSNOTFOUND ?
 		// minimal version: Show those the player is standing on.
 		// TODO: check 8 further away points
-		Location loc = player.getLocation().clone();
-		int x = loc.getBlockX();
-		int y = loc.getBlockY(); // TODO: what exactly ?
-		int z = loc.getBlockZ();
-		CuboidRegion bound = new CuboidRegion(new Vector(x-infoRadius,Math.max(y-infoRadius,minMapHeight),z-infoRadius),
-				new Vector(x+infoRadius,Math.min(y+infoRadius,maxMapHeight),z+infoRadius));
-		
-		for (ProtectedRegion reg : getWorldGuard().getRegionManager(world).getApplicableRegions(loc)){
-			String rgn = reg.getId();
-			String rn = rgn.toLowerCase();
-			Offer offer = offers.get(rn);
-			if ( offer != null ){
-				body+=" "+rgn+"["+offer.amount+" "+offer.currency+"]";
+//		Location loc = player.getLocation().clone();
+//		int x = loc.getBlockX();
+//		int y = loc.getBlockY(); // TODO: what exactly ?
+//		int z = loc.getBlockZ();
+//		ProtectedCuboidRegion bound = new ProtectedCuboidRegion("__rbuy_temp__", new BlockVector(x-infoRadius,Math.max(y-infoRadius,minMapHeight),z-infoRadius),
+//				new BlockVector(x+infoRadius,Math.min(y+infoRadius,maxMapHeight),z+infoRadius));
+//		ApplicableRegionSet set = getWorldGuard().getRegionManager(world).getApplicableRegions(bound);
+//		if ( set != null){
+//			for (ProtectedRegion reg : set){
+//				String rgn = reg.getId();
+//				String rn = rgn.toLowerCase();
+//				Offer offer = offers.get(rn);
+//				if ( offer != null ){
+//					body+=" "+rgn+"["+offer.amount+" "+offer.currency+"]";
+//				}
+//			}
+//		}
+		String playerName = player.getName();
+		RegionManager manager = getWorldGuard().getRegionManager(world);
+		if ( manager != null){
+			for ( Offer offer:offers.values()){ // HILARIOUS
+				if (!showOwn && (playerName.equalsIgnoreCase(offer.benefits)) ){
+					
+				} else{
+					ProtectedRegion region = manager.getRegion(offer.regionName);
+					if ( region != null){
+						if ( checkDistance(player, region, infoRadius)){
+							body+=" "+ChatColor.YELLOW+offer.regionName+ChatColor.WHITE+"["+offer.amount+" "+offer.currency+"]";
+						}
+					}
+				}
 			}
 		}
 
 		if ( body.length() == 0){
-			player.sendMessage("rbuy - No nearby offers found.");
+			send( player, "rbuy - No nearby offers found.");
 		} else{
-			player.sendMessage("rbuy - Nearby offers:"+body);
+			send( player, "rbuy - Nearby offers:"+body);
 		}
 	}
-
-
 
 	public void showAllInfos(CommandSender sender) {
+		String own = "";
+		boolean restrict = !showOwn &&(sender instanceof Player);
+		if (restrict) own = sender.getName();
 		sender.sendMessage("rbuy - all infos:");
 		for (String  rn : sortedStrings(offers.keySet())){
-			showInfo(sender, rn);
+			Offer offer = offers.get(rn);
+			if ( !restrict || !own.equalsIgnoreCase(rn)){
+				showInfo(sender, offer.regionName);
+			}
 		}
 	}
-
-
 
 	/**
 	 * Show detailed info about a specific region-offer.
@@ -571,16 +696,12 @@ public class Rbuy extends JavaPlugin{
 		}
 	}
 
-
-
 	public String getSingleInfo(String rgn) {
 		String rn = rgn.trim().toLowerCase();
 		Offer offer = offers.get(rn);
 		if ( offer == null) return "";
-		return offer.benefits+" ["+offer.worldName+" | "+offer.amount+" "+offer.currency+" from "+offer.benefits+"]";
+		return offer.regionName+" ["+offer.worldName+" | "+offer.amount+" "+offer.currency+" from "+offer.benefits+"]";
 	}
-
-
 
 	/**
 	 * 
@@ -597,8 +718,10 @@ public class Rbuy extends JavaPlugin{
 		sender.sendMessage("rbuy - Offers: "+builder.toString());
 	}
 
-
-
+	/**
+	 * Display own offers.
+	 * @param player
+	 */
 	public void sendOwnOffers(Player player) {
 		PlayerInfo info = this.infos.get(player.getName());
 		if ( (info == null) || (info.offers.size() == 0)){
@@ -613,8 +736,12 @@ public class Rbuy extends JavaPlugin{
 		}
 	}
 
-
-
+	/**
+	 * Call with two or three args (!).
+	 * @param player
+	 * @param args
+	 * @return
+	 */
 	public boolean processOffer(Player player, String[] args) {
 		asofold.admittance.interfaces.EconomyInterface eco = getAdmittanceEconomyInterface();
 		String currency = eco.getDefaultCurrency();
@@ -673,6 +800,7 @@ public class Rbuy extends JavaPlugin{
 		offer.worldName = world.getName();
 		offer.currency = currency;
 		info.offers.add(offer);
+		offers.put(offer.regionName.toLowerCase(), offer);
 		player.sendMessage("rbuy - Placed offer for "+amount+" "+currency+" for: "+rgn);
 		this.changed = true;
 		return true;
@@ -777,11 +905,12 @@ public class Rbuy extends JavaPlugin{
 	public boolean canSellRegion( Player player, String rgn){
 		World world = player.getWorld();
 		ProtectedRegion region = getRegion(world, rgn);
+		if ( region == null ) return false;
 		if ( !region.hasMembersOrOwners() ){
 			if (!player.isOp()){
 				return false;
 			} else{
-				// TODO: ok, add player as owner to region ?
+				return true;
 			}
 		}
 		return isExclusiveOwner(player.getName(), region);
@@ -844,6 +973,11 @@ public class Rbuy extends JavaPlugin{
 			return false;
 		}
 		String playerName = player.getName();
+		if (playerName.equalsIgnoreCase(offer.benefits)){
+			player.sendMessage("rbuy - Your own offer: "+regionName);
+			return false;
+		}
+		
 		PlayerInfo info = getPlayerInfo(playerName);
 		if ( this.maxBuy > 0){
 			if ( getNbuy(info, ts) >= this.maxBuy){
@@ -992,6 +1126,46 @@ public class Rbuy extends JavaPlugin{
 		out.addAll(ref);
 		Collections.sort(out);
 		return out;
+	}
+	
+	public static String removeChatColors(String msg){
+		for ( ChatColor cc : ChatColor.values()){
+			String k = ""+cc;
+			if (msg.indexOf(k)!=-1){
+				msg = msg.replaceAll(k, "");
+			}
+		}
+		return msg;
+	}
+	
+	public static void send(CommandSender sender, String message){
+		if ( sender instanceof Player) sender.sendMessage(message);
+		else sender.sendMessage(removeChatColors(message));
+	}
+	
+	public boolean hasPermission( CommandSender sender , String perm){
+		if ( !(sender instanceof Player)){
+			if ( sender.isOp()) return true;
+			else return false;
+		}
+		Player player = (Player) sender;
+		try{
+			if ( getWorldGuard().hasPermission(sender, perm)) return true;
+		} catch (Throwable t){
+			// TODO: maybe log.
+		}
+		if ( !sender.isOp()){
+			if (!usersBuy && perm.equals("rbuy.buy")) return false;
+			if (!usersSell && perm.equals("rbuy.sell")) return false;
+		}
+		
+		for (String ref : new String[]{
+				"rbuy.reload", "rbuy.enable", "rbuy.disable"
+		}){
+			if (ref.equals(perm)) return  player.isOp();
+		}
+		// rest: pass
+		return true;
 	}
 
 }

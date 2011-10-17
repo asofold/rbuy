@@ -21,3 +21,9 @@ commands:
   rhelp:
      description: no descrition available
      usage:
+  rdisable:
+     description: no descrition available
+     usage:
+  renable:
+     description: no descrition available
+     usage:
