@@ -1,0 +1,23 @@
+name: rbuy
+main: asofold.rbuy.Rbuy
+version: 0.0.0
+
+commands:
+  rbuy: 
+     description: no descrition available
+     usage:
+  rsell: 
+     description: no descrition available
+     usage:
+  rlist:
+     description: no descrition available
+     usage:
+  rinfo:
+     description: no descrition available
+     usage:
+  rreload:
+     description: no descrition available
+     usage:
+  rhelp:
+     description: no descrition available
+     usage:
