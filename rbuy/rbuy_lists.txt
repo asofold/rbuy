@@ -38,5 +38,7 @@ MAYBE:
 - ! TODO: More checks when tas are expired (lazy but more frequent).
 - ! TODO: check if lowercase is really used in important places !
 - ? sell to a certain person only
-- - ! log message for buying ?
+- ! log message for buying ?
 - ! security settings to avoid tooo long intervals (force setting lower),
+- ? logging to database, reading from there on demand.
+- ? fastest nearby checking: some segmentation thingy ?

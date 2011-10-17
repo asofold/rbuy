@@ -597,7 +597,7 @@ public class Rbuy extends JavaPlugin{
 			this.saveData();
 			this.reloadConfig();
 			this.loadData();
-			sender.sendMessage("Reloaded configuration.");
+			sender.sendMessage("rbuy - Reloaded configuration.");
 			return true;		
 		}  else if ( label.equalsIgnoreCase("renable")){
 			if ( !hasPermission(sender, "rbuy.enable")){
