@@ -8,32 +8,71 @@ NOTES:
 	rbuy.reload
 	rbuy.enable
 	rbuy.disable
+- permissions added in  0.1.0:
+	rbuy.max-buy
+	rbuy.distance-buy
+	rbuy.max-offers
+	rbuy.distance-sell
+	rbuy.max-area
+	rbuy.sell-unowned
+	rbuy.show-own
+	rbuy.all
+	
 - configuration: ...
 	If using permissions (used via WorldGuard), set usersSell and usersBuy both to false!
 		Ops keep their priviledges. The info commands can be used anyway.	
 	
+CHANGELOG:
 
+(0.0.1)
+- 
+- ! change: default policy is to DENY permissions for everything.
+- ! add: permission-bypass for everyone (configuration).
+- add: configuration entry oppermissions
+- note: adding permission nodes means that ops can do that by default anyway!
+- add: permission nodes for bypasses:
+- internals: add some javadoc comments.
+- internals: add default values as fields (prevents typos).
+- internals: add constructor.
+- internals: opCmds as field.
 
-TESTS:
+(0.0.0)
+
+TESTS (0.0.0):
 - money transfer, ownership ransfer
-- maxBuy überschritten 
+- maxBuy  
 - (maxArea=0)
 - commands
-- mehrfache besitzer 
-- offer platziert, hinterher owner dazu, dann kauf 
+- multiple owners
+- offer placed, add owner, buy 
 - member + owner
 - member only
 - buy own region
 - op sells region without owners/members
 - non op sells region without owner / member
-- maxOffers überschreiten
+- maxOffers 
 - test nearby from all sides (appr.)
-- permissions (fake)
+- permissions (fake+Pex)
 
 SCHEDULE:
-- more testing
+- ! conf opts for display worldname, limit list to world of player, sim.
+- ! change permission policy to deny for most
+- ! sign support (+enabling/disabling individual commands)
+- ! op permissions flag to disable op bypasses, permission nodes for rest
+- ! area limitation does not work
+- ! add volumen restriction.
+- ! more testing
+- ! add permissions and flag support for bypasses, and for resource intense stuff like listing. 
+- ? WorldGuard/worldName: ensure that the functionality is restricted to having the player and regions be in the same world, except for /rsell, probably
+- ! op commands for administraction (removing offers, transactions, all/for players, consistency checking etc., create backups..... (? for some: use with * before region name to avoid hundreds of commands ?)
+- ! ingame configuration changes 
+- ! configurable: show worldname, showWorldspecific
+- ? sorted regions: sort offers.keySet!, keep sorted list in memory, till change.
+
 
 MAYBE:
+- ? config permissions
+- ? multiple owners (all have to agree upon selling)
 - ? more fine grained permissions (ops)
 - ! TODO: More checks when tas are expired (lazy but more frequent).
 - ! TODO: check if lowercase is really used in important places !

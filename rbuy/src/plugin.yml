@@ -1,6 +1,6 @@
 name: rbuy
 main: asofold.rbuy.Rbuy
-version: 0.0.0
+version: 0.1.0 beta
 
 commands:
   rbuy: 

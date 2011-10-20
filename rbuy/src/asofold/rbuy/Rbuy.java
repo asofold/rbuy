@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -34,11 +36,13 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
  * Buy/sell WorldGuard regions.
  * Interfacing to economy: via admittance (later: Register or plshared).
  * Internally lowercase keys are used, though names are stored case-sensitive.
- * (Fast dev.)
+ * ("Fast" dev.)
  * @author mc_dev
  *
  */
 public class Rbuy extends JavaPlugin{
+	
+	// Classes: 
 	
 	/**
 	 * Delegates commands.
@@ -53,7 +57,7 @@ public class Rbuy extends JavaPlugin{
 		@Override
 		public boolean onCommand(CommandSender sender, Command command,
 				String label, String[] args) {
-			return this.plugin.processCommand(sender, command,label, args);
+			return this.plugin.processCommand(sender, command, label, args);
 		}
 		
 	}
@@ -83,6 +87,7 @@ public class Rbuy extends JavaPlugin{
 			if ( amount < 0) return false;
 			return true;
 		}
+		
 		public void toConfig( Configuration config, String prefix){
 			if (regionName == null) return; // set nothing.
 			config.setProperty(prefix+"regionName",	 regionName);
@@ -121,6 +126,7 @@ public class Rbuy extends JavaPlugin{
 			if ( (buyerName == null) ) return false;
 			return true;
 		}
+		
 		public void toConfig( Configuration config, String prefix){
 			if ( buyerName != null){
 				config.setProperty(prefix+"buyerName", buyerName);
@@ -139,17 +145,6 @@ public class Rbuy extends JavaPlugin{
 		}
 	}
 	
-	public Long getLong(Configuration config, String key, Long preset ){
-		String candidate = config.getString(key, null);
-		if ( candidate == null) return preset;
-		if ( !(candidate instanceof String) ) candidate = candidate.toString();
-		try{
-			return Long.parseLong(candidate);
-		} catch (NumberFormatException e){
-			return preset;
-		}
-	}
-	
 	/**
 	 * Info about player, basically for limiting the buying and selling.
 	 * @author mc_dev
@@ -165,88 +160,131 @@ public class Rbuy extends JavaPlugin{
 	}
 
 	
+	
+	
+	// Configuration content: 
+	Configuration currentConfig = null;
+	
+	/**
+	 * Enable/disable functionality flag.
+	 * Everything except for reload, enable, disable can be disabled.
+	 */
+	boolean defaultActive = true;
+	boolean active= false;
+	
+	/**
+	 * Allow ops everything.
+	 */
+	boolean defaultOpPermissions = true;
+	boolean opPermissions = defaultOpPermissions;
+	
+	/**
+	 * Number of regions one can buy during interval.
+	 */
+	int defaultMaxBuy = 5;
+	int maxBuy = defaultMaxBuy;
+	
+	/**
+	 * Days that buying transactions count for the limit.
+	 */
+	int defaultTimeCountBuy = 10;
+	int timeCountBuy = defaultTimeCountBuy;
+	
+	/**
+	 * Maximum area to buy within timeCountArea days.
+	 */
+	long defaultMaxArea = 0;
+	long maxArea = defaultMaxArea;
+	
+	/**
+	 * Valid maxArea interval.
+	 */
+	int defaultTimeCountArea = 10;
+	int timeCountArea = defaultTimeCountArea;
+	
+	/**
+	 * Maximum number of offers a player can have at a time.
+	 */
+	int defaultMaxOffers = 3;
+	int maxOffers = defaultMaxOffers;
+	
+	/**
+	 * Forget transactions older than this (days).
+	 */
+	int defaultTimeForgetTransaction = 30;
+	int timeForgetTransaction = defaultTimeForgetTransaction;
+	
+	/**
+	 * Distance to region at which players can buy it.
+	 */
+	int defaultDistanceBuy = 30;
+	int distanceBuy = defaultDistanceBuy;
+	
+	/**
+	 * Distance to region at which players can sell it.
+	 */
+	int defaultDistanceSell = 60;	
+	int distanceSell = defaultDistanceSell;	
+	
+	/**
+	 * Distance to region for which is shown when using the info command without arguments.
+	 */
+	int defaultInfoRadius = 20;
+	int infoRadius = defaultInfoRadius;
+	
+	/**
+	 * Show all entries for list.
+	 */
+	boolean defaultShowAll = true;
+	boolean showAll = defaultShowAll;
+	
+	/**
+	 * Show own entries on info / list (?).
+	 */
+	boolean defaultShowOwn = false;
+	boolean showOwn = defaultShowOwn;
+	
+	/**
+	 * Strict boundary.
+	 */
+	int defaultMinMapHeight = 0;
+	int minMapHeight = defaultMinMapHeight;
+	
+	/**
+	 * Strict boundary
+	 */
+	int defaultMaxMapHeight = 127;
+	int maxMapHeight = defaultMaxMapHeight;
+	
+	/**
+	 * Non-op users can use the rbuy command (overrides permissions).
+	 */
+	boolean defaultUsersBuy = true;
+	boolean usersBuy = defaultUsersBuy;
+	
+	/**
+	 * Non-op users can use the rsell command (overrides permissions).
+	 */
+	boolean defaultUsersSell = true;
+	boolean usersSell = defaultUsersSell;
+	
+	/**
+	 * Permissions to ignore: allow by default.
+	 */
+	String[] defaultIgnorePermissions = new String[]{
+		"rbuy.buy", "rbuy.sell", "rbuy.info", "rbuy.list",
+		"rbuy.show-own"
+	};
+	Set<String> ignorePermissions = new HashSet<String>();
+	
+	// Others:
+	
 	String name = "Rbuy";
 	String version = "?";
 	
 	String[] cmds = new String[]{
 			"rbuy", "rsell", "rlist", "rinfo", "rhelp", "rreload", "renable", "rdisable"
 		};
-	
-	Configuration currentConfig = null;
-	
-	
-	boolean active= false;
-	
-	/**
-	 * Number of regions one can buy during interval.
-	 */
-	int maxBuy = 5;
-	
-	/**
-	 * Days that buying transactions count for the limit.
-	 */
-	int timeCountBuy = 10;
-	
-	/**
-	 * Maximum area to buy within timeCountArea days.
-	 */
-	long maxArea = 0;
-	
-	/**
-	 * Valid maxArea interval.
-	 */
-	int timeCountArea = 10;
-	
-	/**
-	 * Maximum number of offers a player can have at a time.
-	 */
-	int maxOffers = 3;
-	
-	/**
-	 * Forget transactions older than this (days).
-	 */
-	int timeForgetTransaction = 30;
-	
-	
-	/**
-	 * 
-	 */
-	int distanceBuy = 30;
-	
-	/**
-	 * 
-	 */
-	int distanceSell = 60;	
-	
-	/**
-	 * Radius for info command without arguments.
-	 */
-	int infoRadius = 20;
-	
-	/**
-	 * Show all entries for list.
-	 */
-	boolean showAll = true;
-	
-	/**
-	 * Show own entries on info / list (?).
-	 */
-	boolean showOwn = false;
-	
-	/**
-	 * Strict boundary.
-	 */
-	int minMapHeight = 0;
-	
-	/**
-	 * Strict boundary
-	 */
-	int maxMapHeight = 127;
-	
-	boolean usersBuy = true;
-	
-	boolean usersSell = true;
-	
 	
 	
 	/**
@@ -288,6 +326,13 @@ public class Rbuy extends JavaPlugin{
 
 	public String getPluginDescr(){
 		return this.name +"("+this.version+")";
+	}
+	
+	/**
+	 * Constructor, in case someone is looking for it.
+	 */
+	public Rbuy(){
+		super();
 	}
 
 	@Override
@@ -357,44 +402,51 @@ public class Rbuy extends JavaPlugin{
 	void applyConfig() {
 		// apply this.currentConfig
 		Configuration config = this.currentConfig;
-		this.active = config.getBoolean("active", true);
-		this.usersBuy = config.getBoolean("users-buy", true);
-		this.usersSell = config.getBoolean("users-sell", true);
-		this.showOwn = config.getBoolean("show-own", false);
-		this.showAll = config.getBoolean("show-all", true);
-		this.minMapHeight = config.getInt("min-map-height", 0);
-		this.maxMapHeight = config.getInt("max-map-height", 127);
-		this.maxBuy = config.getInt("max-buy", 5);
-		this.timeCountBuy= config.getInt("time-count-buy", 10);
-		this.maxArea = getLong(config, "max-area", (long) 0);
-		this.timeCountArea = config.getInt("time-count-area", 10);
-		this.maxOffers = config.getInt("max-offers", 3);
-		this.timeForgetTransaction = config.getInt("time-forget-transaction", 21);
-		this.distanceBuy = config.getInt("distance-buy", 30);
-		this.distanceSell = config.getInt("distance-sell", 50);
-		this.infoRadius = config.getInt("info-radius", 10);
+		this.active = config.getBoolean("active", defaultActive);
+		this.usersBuy = config.getBoolean("users-buy", defaultUsersBuy);
+		this.usersSell = config.getBoolean("users-sell", defaultUsersSell);
+		this.showOwn = config.getBoolean("show-own", defaultShowOwn);
+		this.showAll = config.getBoolean("show-all", defaultShowAll);
+		this.minMapHeight = config.getInt("min-map-height", defaultMinMapHeight);
+		this.maxMapHeight = config.getInt("max-map-height", defaultMaxMapHeight);
+		this.maxBuy = config.getInt("max-buy",  defaultMaxBuy);
+		this.timeCountBuy= config.getInt("time-count-buy", defaultTimeCountBuy);
+		this.maxArea = getLong(config, "max-area", defaultMaxArea);
+		this.timeCountArea = config.getInt("time-count-area", defaultTimeCountArea);
+		this.maxOffers = config.getInt("max-offers", defaultMaxOffers);
+		this.timeForgetTransaction = config.getInt("time-forget-transaction", defaultTimeForgetTransaction);
+		this.distanceBuy = config.getInt("distance-buy", defaultDistanceBuy);
+		this.distanceSell = config.getInt("distance-sell", defaultDistanceSell);
+		this.infoRadius = config.getInt("info-radius", defaultInfoRadius);
+		this.ignorePermissions.clear();
+		this.ignorePermissions.addAll(config.getStringList("ignore-permissions", new LinkedList<String>()));
 	}
 
 	private void setDefaultConfig() {
 		// create and safe default configuration.
 		File file = new File(this.getDataFolder(), "rbuy.yml");
 		Configuration config = new Configuration(file);
-		config.setProperty("active", true);
-		config.setProperty("users-buy", true);
-		config.setProperty("users-sell", true);
-		config.setProperty("show-own", false);
-		config.setProperty("show-all", true);
-		config.setProperty("min-map-height", 0);
-		config.setProperty("max-map-height", 127);
-		config.setProperty("max-buy", 5);
-		config.setProperty("time-count-buy", 10);
-		config.setProperty("max-area", 0);
-		config.setProperty("time-count-area", 10);
-		config.setProperty("max-offers", 3);
-		config.setProperty("time-forget-transaction", 21);
-		config.setProperty("distance-buy", 30);
-		config.setProperty("distance-sell", 50);
-		config.setProperty("info-radius", 5);
+		config.setProperty("active", defaultActive);
+		config.setProperty("users-buy", defaultDistanceBuy);
+		config.setProperty("users-sell", defaultDistanceSell);
+		config.setProperty("show-own", defaultShowOwn);
+		config.setProperty("show-all", defaultShowAll);
+		config.setProperty("min-map-height", defaultMinMapHeight);
+		config.setProperty("max-map-height", defaultMaxMapHeight);
+		config.setProperty("max-buy", defaultMaxBuy);
+		config.setProperty("time-count-buy", defaultTimeCountBuy);
+		config.setProperty("max-area", defaultMaxArea);
+		config.setProperty("time-count-area", defaultTimeCountArea);
+		config.setProperty("max-offers", defaultMaxOffers);
+		config.setProperty("time-forget-transaction", defaultTimeForgetTransaction);
+		config.setProperty("distance-buy", defaultDistanceBuy);
+		config.setProperty("distance-sell", defaultDistanceSell);
+		config.setProperty("info-radius", defaultInfoRadius);
+		LinkedList<String> ign = new LinkedList<String>();
+		for ( String p : this.defaultIgnorePermissions){
+			ign.add(p);
+		}
+		config.setProperty("ignore-permissions", ign);
 		
 		if ( !config.save()){
 			getServer().getLogger().severe("Rbuy - failed to save default configuration.");
@@ -403,7 +455,25 @@ public class Rbuy extends JavaPlugin{
 	}
 	
 	/**
-	 * Get a playerInfo for the given player name, either from infos or a new one (also put to infos).
+	 * Get a long value from a Configuration instance.
+	 * @param config
+	 * @param key
+	 * @param preset
+	 * @return
+	 */
+	public Long getLong(Configuration config, String key, Long preset ){
+		String candidate = config.getString(key, null);
+		if ( candidate == null) return preset;
+		if ( !(candidate instanceof String) ) candidate = candidate.toString();
+		try{
+			return Long.parseLong(candidate);
+		} catch (NumberFormatException e){
+			return preset;
+		}
+	}
+	
+	/**
+	 * Get a playerInfo for the given player name, either from infos or a new one (then put to infos).
 	 * @param playerName
 	 * @return
 	 */
@@ -420,6 +490,9 @@ public class Rbuy extends JavaPlugin{
 		}
 	}
 	
+	/**
+	 * Load all data into memory: offers, past transactions.
+	 */
 	void loadData(){
 		this.offers.clear();
 		this.transactions.clear();
@@ -474,6 +547,9 @@ public class Rbuy extends JavaPlugin{
 		System.out.println("rbuy - load data: "+offers.size() +" offers, "+transactions.size()+" transactions.");
 	}
 	
+	/**
+	 * Save data from memory to file.
+	 */
 	void saveData(){
 		if ( !active ) return; // policy - prevent
 		File file = new File( getDataFolder(), "runtime.yml");
@@ -500,7 +576,14 @@ public class Rbuy extends JavaPlugin{
 		this.changed = false;
 	}
 	
-	
+	/**
+	 * Process a chat command.
+	 * @param sender
+	 * @param command
+	 * @param label
+	 * @param args
+	 * @return
+	 */
 	public boolean processCommand(CommandSender sender, Command command,
 			String label, String[] args) {
 		int length = args.length;
@@ -621,6 +704,10 @@ public class Rbuy extends JavaPlugin{
 		return false;
 	}
 	
+	/**
+	 * Show region offers that are nearby the players current location.
+	 * @param player
+	 */
 	private void showNearbyInfo(Player player) {
 		World world = player.getWorld();
 		String body = "";
@@ -770,7 +857,7 @@ public class Rbuy extends JavaPlugin{
 		}
 		String playerName = player.getName();
 		PlayerInfo info = getPlayerInfo(playerName);
-		if ( (this.maxOffers>0) && (info.offers.size()>=this.maxOffers)){
+		if ( (this.maxOffers>0) && (info.offers.size()>=this.maxOffers) && !hasPermission(player, "rbuy.max-offers")){
 			player.sendMessage("rbuy - You can only place "+maxOffers+" offers at a time.");
 			return false;
 		}
@@ -781,8 +868,9 @@ public class Rbuy extends JavaPlugin{
 			player.sendMessage("rbuy - The region "+rgn+" does not exist for the world: "+world.getName());
 			return false;
 		}
+		
 		if ( distanceSell > 0 ){
-			if ( !checkDistance(player, region, distanceSell)){
+			if ( !checkDistance(player, region, distanceSell) && !hasPermission(player, "rbuy.distance-sell") ){
 				player.sendMessage("rbuy - You need to be no farther than "+distanceSell+" blocks away from the region you want to offer.");
 				return false;
 			}
@@ -910,7 +998,7 @@ public class Rbuy extends JavaPlugin{
 			if (!player.isOp()){
 				return false;
 			} else{
-				return true;
+				return hasPermission(player, "rbuy.sell-unowned");
 			}
 		}
 		return isExclusiveOwner(player.getName(), region);
@@ -974,13 +1062,13 @@ public class Rbuy extends JavaPlugin{
 		}
 		String playerName = player.getName();
 		if (playerName.equalsIgnoreCase(offer.benefits)){
-			player.sendMessage("rbuy - Your own offer: "+regionName);
+			player.sendMessage("rbuy - Your offer: "+regionName);
 			return false;
 		}
 		
 		PlayerInfo info = getPlayerInfo(playerName);
 		if ( this.maxBuy > 0){
-			if ( getNbuy(info, ts) >= this.maxBuy){
+			if ( (getNbuy(info, ts) >= this.maxBuy) && !hasPermission(player, "rbuy.max-buy")){
 				String msg = "rbuy - You can only buy "+this.maxBuy+" regions";
 				if ( this.maxBuy>0 ) msg += " within "+this.timeCountBuy+" days.";
 				else msg += ".";
@@ -1014,7 +1102,7 @@ public class Rbuy extends JavaPlugin{
 		long area =  getArea(region);
 		// check versus boundaries of info:
 		if (this.maxArea > 0){
-			if ( getAreaBuy(info, ts)+area>this.maxArea ){
+			if ( (getAreaBuy(info, ts)+area>this.maxArea) && !hasPermission(player, "rbuy.max-area") ){
 				String msg = "rbuy - The area is too big in total to be bought by you";
 				if ( this.timeCountArea == 0 ) msg += ".";
 				else msg += " within "+ this.timeCountArea+" days.";
@@ -1023,7 +1111,7 @@ public class Rbuy extends JavaPlugin{
 			}
 		}
 		
-		if (!this.checkDistance(player, region, distanceBuy)){
+		if (!this.checkDistance(player, region, distanceBuy) && !hasPermission(player, "rbuy.distance-buy")){
 			player.sendMessage("rbuy - You are too far from the region to buy it, you must be within "+this.distanceBuy+" blocks of it.");
 			return false;
 		}
@@ -1144,28 +1232,32 @@ public class Rbuy extends JavaPlugin{
 	}
 	
 	public boolean hasPermission( CommandSender sender , String perm){
+		if (this.ignorePermissions.contains(perm)) return true;
 		if ( !(sender instanceof Player)){
+			// TODO: document this (!)
 			if ( sender.isOp()) return true;
 			else return false;
+		} else if (opPermissions){
+			if (sender.isOp()) return true;
 		}
 		Player player = (Player) sender;
+		
 		try{
-			if ( getWorldGuard().hasPermission(sender, perm)) return true;
+			// Check permission by WorldGuard.
+			// NOTE: WorldGuard might have set oppermissions to true in its configuration,
+			//       so that ops have any permission, which could override other settings for rbuy.
+			// TODO: Hook into WEPIF, since WorldGuard/WorldEdit have it on anyway.
+			WorldGuardPlugin wg = getWorldGuard();
+			if ( wg != null){
+				if ( wg.hasPermission(sender, perm)) return true;
+				if ( wg.hasPermission(sender, "rbuy.all")) return true;
+
+			} // else: PROBLEM.
 		} catch (Throwable t){
 			// TODO: maybe log.
 		}
-		if ( !sender.isOp()){
-			if (!usersBuy && perm.equals("rbuy.buy")) return false;
-			if (!usersSell && perm.equals("rbuy.sell")) return false;
-		}
-		
-		for (String ref : new String[]{
-				"rbuy.reload", "rbuy.enable", "rbuy.disable"
-		}){
-			if (ref.equals(perm)) return  player.isOp();
-		}
-		// rest: pass
-		return true;
+	
+		return false;
 	}
 
 }
