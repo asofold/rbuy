@@ -27,3 +27,6 @@ commands:
   renable:
      description: no descrition available
      usage:
+  rremove:
+     description: no descrition available
+     usage:

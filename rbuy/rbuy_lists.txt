@@ -15,26 +15,55 @@ NOTES:
 	rbuy.distance-sell
 	rbuy.max-area
 	rbuy.sell-unowned
-	rbuy.show-own
+	rbuy.show-all
 	rbuy.all
 	
 - configuration: ...
-	If using permissions (used via WorldGuard), set usersSell and usersBuy both to false!
-		Ops keep their priviledges. The info commands can be used anyway.	
+	usersBuy and usersSell is deprecated as of 0.0.1, use ignore-permissions and entries there	
 	
 CHANGELOG:
 
-(0.0.1)
-- 
-- ! change: default policy is to DENY permissions for everything.
-- ! add: permission-bypass for everyone (configuration).
+(0.1.0)
+- add: sign support both for selling and buying.
+- add: magic words for signs (not for commands).
+- remove: users-buy, users-sell configuration options.
+- add: ignore-permissions configuration option.
+- add: bypass permissions for limits including "rbuy.all".
+- add: commands per seconds limit.
+- change: default policy is to DENY permissions for everything.
+- add: sort displayed regions by name (everywhere).
 - add: configuration entry oppermissions
-- note: adding permission nodes means that ops can do that by default anyway!
-- add: permission nodes for bypasses:
+- add: permission nodes for bypasses including "all".
+- bugfix: Multiple worlds compatibility: cross world  buying is now impossible, neither for regions with same names nor in general.
+- note: op-permissions are dependent on the permissions plugin / WorldGuard.
+- internals: adjusted many places to cover null inputs, demand world names to be not null on loading.
 - internals: add some javadoc comments.
 - internals: add default values as fields (prevents typos).
-- internals: add constructor.
-- internals: opCmds as field.
+
+
+-
+- ! /rsell *
+- ! /rinfo xyz*
+- ! /rlist with options ! (list own, list own|my/other by prefix (!) etc. /rlist own, /rlist X*, /rlist own x*
+- ! test selling unowned reghions with sign
+- ! list: WORLD-SPECIFIC, in fact: all internals world specific !	
+- ! ensure correct region id on signs and texts.
+- ! restricting number of commands per second per player(!)
+- ! volumen re)striction
+- ! new TEST list, LIST about settings and permissions: c,d, dv,u, LIST about all permissions c
+- ! op permissions flag to disable op bypasses, permission nodes for rest
+- ? WEPIF directly?
+- ! config flags for use bukkit-perms, worldguard/WEPIF-perms
+- ! area limitation does not work?
+- ! add volumen restriction.
+- ! rhelp text !
+- ! add all configuration variables
+- ? opt: sorted lists for strings (cache!) set null on changes, resort on demand.
+- ? opt: saving strategy ? -> multiple files (per world or at least transactions, regions).)
+- ! all config options
+- ! all permissions
+- ! administrative commands for removing offers of others rremove all <player>, rremove <region>
+- ! removeOffer : remove map for world if empy !
 
 (0.0.0)
 
@@ -55,22 +84,21 @@ TESTS (0.0.0):
 - permissions (fake+Pex)
 
 SCHEDULE:
-- ! conf opts for display worldname, limit list to world of player, sim.
-- ! change permission policy to deny for most
-- ! sign support (+enabling/disabling individual commands)
-- ! op permissions flag to disable op bypasses, permission nodes for rest
-- ! area limitation does not work
-- ! add volumen restriction.
+
+- ! flat file strategy -> less space, faster ? separate offers, transactions files, world specific ?
+- ! custom language
 - ! more testing
-- ! add permissions and flag support for bypasses, and for resource intense stuff like listing. 
 - ? WorldGuard/worldName: ensure that the functionality is restricted to having the player and regions be in the same world, except for /rsell, probably
 - ! op commands for administraction (removing offers, transactions, all/for players, consistency checking etc., create backups..... (? for some: use with * before region name to avoid hundreds of commands ?)
 - ! ingame configuration changes 
-- ! configurable: show worldname, showWorldspecific
 - ? sorted regions: sort offers.keySet!, keep sorted list in memory, till change.
-
+- ? sector/segmentation sorting for offers
+- ! check worldguard selections for finding regions quickly !!!
+- ! (new)  auctions !
+- ? double comparison - use some other equality that '==', like abs <= min(0.0001, price1/1000, price2/1000 )
 
 MAYBE:
+- ? region specific config update settings (for distances for instance, with passthrough regions ...)
 - ? config permissions
 - ? multiple owners (all have to agree upon selling)
 - ? more fine grained permissions (ops)
