@@ -21,51 +21,54 @@ NOTES:
 - configuration: ...
 	usersBuy and usersSell is deprecated as of 0.0.1, use ignore-permissions and entries there	
 	
+---------------------------------------------------------
+	
 CHANGELOG:
 
 (0.1.0)
 - add: sign support both for selling and buying.
 - add: magic words for signs (not for commands).
+- add: volumen restriction
+- add: negative entries for times default along the chain volume->area->buy->transaction(end)
 - remove: users-buy, users-sell configuration options.
 - add: ignore-permissions configuration option.
 - add: bypass permissions for limits including "rbuy.all".
-- add: commands per seconds limit.
+- add: commands per second limit.
 - change: default policy is to DENY permissions for everything.
-- add: sort displayed regions by name (everywhere).
+- add: sort displayed regions by name (hopefully everywhere).
 - add: configuration entry oppermissions
 - add: permission nodes for bypasses including "all".
+- add: configuration option: list-all-worlds
 - bugfix: Multiple worlds compatibility: cross world  buying is now impossible, neither for regions with same names nor in general.
+- bugfix: The area is now written/read  correctly from transaction entries of the data file.
 - note: op-permissions are dependent on the permissions plugin / WorldGuard.
+- fix: prevent selling the global region.
 - internals: adjusted many places to cover null inputs, demand world names to be not null on loading.
 - internals: add some javadoc comments.
 - internals: add default values as fields (prevents typos).
+- internals: Decided upon which methods/attributes to set to public visibility (for the moment).
 
-
+- !! MAKE 100% SURE HOW TO SET / CHANGE WG-REGIONS !! grm.preload?
+- !  ? only cuboid 
 - ? bukkit : default config ?
-- ! check all to/from-config for old left overs.
 - ? /rplace to place an offer for someone else (also an anonymous or special acount ?)
 - ! /rsell *
 - ! /rinfo xyz*
 - ! /rlist with options ! (list own, list own|my/other by prefix (!) etc. /rlist own, /rlist X*, /rlist own x*
 - ! test selling unowned reghions with sign
-- ! list: WORLD-SPECIFIC, in fact: all internals world specific !	
 - ! ensure correct region id on signs and texts.
 - ! restricting number of commands per second per player(!)
 - ! volumen re)striction
 - ! new TEST list, LIST about settings and permissions: c,d, dv,u, LIST about all permissions c
-- ! op permissions flag to disable op bypasses, permission nodes for rest
 - ? WEPIF directly?
-- ! config flags for use bukkit-perms, worldguard/WEPIF-perms
-- ! area limitation does not work?
-- ! add volumen restriction.
 - ! rhelp text !
-- ! add all configuration variables
 - ? opt: sorted lists for strings (cache!) set null on changes, resort on demand.
 - ? opt: saving strategy ? -> multiple files (per world or at least transactions, regions).)
-- ! all config options
-- ! all permissions
 - ! administrative commands for removing offers of others rremove all <player>, rremove <region>
-- ! removeOffer : remove map for world if empy !
+- ? everywhere: use the "real" names but compare lowercase. + SORTING everywhere !   
+- ? more distinct information about limits ( you have xy area left within x days?)
+- ? rinfo wand, sign with rinfo
+- ! ensure a magic word buy/sell
 
 (0.0.0)
 
@@ -84,6 +87,8 @@ TESTS (0.0.0):
 - maxOffers 
 - test nearby from all sides (appr.)
 - permissions (fake+Pex)
+
+-------------------------------------------------------------
 
 SCHEDULE:
 
