@@ -416,7 +416,6 @@ public class Rbuy extends JavaPlugin{
 	 */
 	Map<String, Map<String, Offer>> offers = new HashMap<String, Map<String, Offer>>();
 	
-	
 	/**
 	 * Past transactions.
 	 */
@@ -433,7 +432,6 @@ public class Rbuy extends JavaPlugin{
 	final RbuyPlayerListener playerListener = new RbuyPlayerListener(this);
 	final RbuyBlockListener blockListener = new RbuyBlockListener(this);
 	
-
 	@Override
 	public void onDisable() {
 		this.active = false;
@@ -487,8 +485,6 @@ public class Rbuy extends JavaPlugin{
 		this.active = b;
 		// TODO: save config ?
 	}
-
-
 
 	public Configuration getCurrentConfig(){
 		if ( this.currentConfig == null){
@@ -561,11 +557,13 @@ public class Rbuy extends JavaPlugin{
 		this.useBukkitPerms = config.getBoolean("use-bukkit-perms", defaultUseBukkitPerms);
 		this.useSigns = config.getBoolean("use-signs", defaultUseSigns);
 		this.useWgPerms = config.getBoolean("use-worldguard-perms", defaultUseWgPerms);
-		
+		// Some special defaults / checks:
 		if ( this.timeForgetTransaction<0 ) this.timeForgetTransaction = 0;
 		if ( this.timeCountBuy<0 ) this.timeCountBuy = this.timeForgetTransaction;
 		if ( this.timeCountArea<0 ) this.timeCountArea = this.timeCountBuy;
 		if ( this.timeCountVolume<0) this.timeCountVolume = this.timeCountArea;
+		if (this.magicWordsBuy.isEmpty()) this.magicWordsBuy.add(this.defaultMagicWordBuy);
+		if (this.magicWordsSell.isEmpty()) this.magicWordsSell.add(this.defaultMagicWordSell);
 	}
 	
 	/**
@@ -629,24 +627,6 @@ public class Rbuy extends JavaPlugin{
 	}
 	
 	/**
-	 * Get a playerInfo for the given player name, either from infos or a new one (then put to infos).
-	 * @param playerName
-	 * @return
-	 */
-	public PlayerInfo getPlayerInfo(String playerName){
-		String key = playerName.toLowerCase();
-		PlayerInfo info = this.infos.get(key);
-		if ( info != null){
-			return info;
-		} else{
-			info = new PlayerInfo();
-			info.playerName = playerName;
-			this.infos.put(key, info);
-			return info;
-		}
-	}
-	
-	/**
 	 * Load all data into memory: offers, past transactions.
 	 */
 	public void loadData(){
@@ -682,8 +662,6 @@ public class Rbuy extends JavaPlugin{
 				}
 			}
 		}
-		
-		
 		// offers:
 		prefix = "offers";
 		keys = config.getKeys(prefix);
@@ -725,19 +703,36 @@ public class Rbuy extends JavaPlugin{
 				offer.toConfig(config, prefix);
 			}
 		}
-		
-		
 		i = 0;
 		for ( Transaction ta : this.transactions){
 			i++;
 			String prefix = "transactions.n"+i+".";
 			ta.toConfig(config, prefix);
 		}
-		
 		if ( !config.save() ){
 			getServer().getLogger().severe("rbuy - Failed to save data.");
 		}
 		this.changed = false;
+	}
+	
+	// NO CONFIG BELOW HERE ----------------------------------------------------------------
+	
+	/**
+	 * Get a playerInfo for the given player name, either from infos or a new one (then put to infos).
+	 * @param playerName
+	 * @return
+	 */
+	public PlayerInfo getPlayerInfo(String playerName){
+		String key = playerName.toLowerCase();
+		PlayerInfo info = this.infos.get(key);
+		if ( info != null){
+			return info;
+		} else{
+			info = new PlayerInfo();
+			info.playerName = playerName;
+			this.infos.put(key, info);
+			return info;
+		}
 	}
 	
 	/**
@@ -815,7 +810,7 @@ public class Rbuy extends JavaPlugin{
 				}
 				
 			} else{
-				player.sendMessage("rbuy - Wrong number of arguments for rsell, expect: /rsell <region> <amount> [<currency>] | /rsell <region>");
+				send(player, "rbuy - Wrong number of arguments for rsell, expect: /rsell <region> <amount> [<currency>] | /rsell <region>");
 				return false;
 			}
 		} else if ( label.equalsIgnoreCase("rbuy")){
@@ -1033,7 +1028,7 @@ public class Rbuy extends JavaPlugin{
 	void sendOwnOffers(Player player, String prefix ) {
 		PlayerInfo info = this.infos.get(player.getName());
 		if ( (info == null) || (info.offers.size() == 0)){
-			player.sendMessage("rbuy - You are not offering any regions for sale.");
+			send(player, "rbuy - You are not offering any regions for sale.");
 		} else{
 			String msg = "rbuy - Your offers: ";
 			// TODO: list worldspecific, list by prefix
@@ -1051,7 +1046,7 @@ public class Rbuy extends JavaPlugin{
 			for (String rn : sortedStrings(rns)){
 				msg += rn+" ";
 			}
-			player.sendMessage(msg);
+			send(player, msg);
 		}
 	}
 
@@ -1067,13 +1062,13 @@ public class Rbuy extends JavaPlugin{
 		if ( args.length == 3){
 			currency = args[2].trim().toLowerCase();
 			if (!eco.isAcceptedCurrency(currency)){
-				player.sendMessage("The currency is not accepted: "+currency);
+				send(player, "The currency is not accepted: "+currency);
 				return false;
 			}
 		} 
 		String rgn = args[0].trim();
 		if ( rgn.equalsIgnoreCase("__global__")){
-			player.sendMessage("rbuy - The region '__global__' can not be sold.");
+			send(player, "rbuy - The region '__global__' can not be sold.");
 			return false;
 		}
 		double amount = -1;
@@ -1083,30 +1078,30 @@ public class Rbuy extends JavaPlugin{
 			
 		}
 		if ( amount < 0 ){
-			player.sendMessage("rbuy - invalid amount: "+args[1]);
+			send(player, "rbuy - invalid amount: "+args[1]);
 			return false;
 		}
 		
 		if ( !canSellRegion(player, rgn)){
-			player.sendMessage("rbuy - You do not have the exclusive ownership or rights to sell the region: "+rgn);
+			send(player, "rbuy - You do not have the exclusive ownership or rights to sell the region: "+rgn);
 			return false;
 		}
 		String playerName = player.getName();
 		PlayerInfo info = getPlayerInfo(playerName);
 		if ( (this.maxOffers>0) && (info.offers.size()>=this.maxOffers) && !hasPermission(player, "rbuy.max-offers")){
-			player.sendMessage("rbuy - You can only place "+maxOffers+" offers at a time.");
+			send(player, "rbuy - You can only place "+maxOffers+" offers at a time.");
 			return false;
 		}
 		World world = player.getWorld();
 		ProtectedRegion region = getRegion(world, rgn);
 		
 		if ( region == null ){
-			player.sendMessage("rbuy - The region "+rgn+" does not exist for the world: "+world.getName());
+			send(player, "rbuy - The region "+rgn+" does not exist for the world: "+world.getName());
 			return false;
 		}
 		if ( distanceSell > 0 ){
 			if ( !checkDistance(player, region, distanceSell) && !hasPermission(player, "rbuy.distance-sell") ){
-				player.sendMessage("rbuy - You need to be no farther than "+distanceSell+" blocks away from the region you want to offer.");
+				send(player, "rbuy - You need to be no farther than "+distanceSell+" blocks away from the region you want to offer.");
 				return false;
 			}
 		}
@@ -1119,7 +1114,7 @@ public class Rbuy extends JavaPlugin{
 		offer.currency = getCurrency(currency);
 		info.offers.add(offer);
 		putOffer(offer); // removes old offer if present.
-		player.sendMessage("rbuy - Placed offer for "+amount+" "+currency+" for: "+rgn);
+		send(player, "rbuy - Placed offer for "+amount+" "+currency+" for: "+rgn);
 		this.changed = true;
 		return true;
 	}
@@ -1129,24 +1124,24 @@ public class Rbuy extends JavaPlugin{
 		String wn = player.getWorld().getName();
 		Offer offer = getOffer(rgn,wn);
 		if ( offer == null ){
-			player.sendMessage("rbuy - No offer in world '"+wn+"' for region: "+rn);
+			send(player, "rbuy - No offer in world '"+wn+"' for region: "+rn);
 			return true;
 		}
 		if ( !player.getName().equalsIgnoreCase(offer.benefits)){
 			World world = player.getWorld();
 			ProtectedRegion region = getRegion(world, rn);
 			if ( region == null){
-				player.sendMessage("rbuy - the region does not exist: "+rgn);
+				send(player, "rbuy - the region does not exist: "+rgn);
 				return false;
 			}
 			if (!region.isOwner(getWorldGuard().wrapPlayer(player))){
-				player.sendMessage("rbuy - You are not owner of the region, neither is this your offer: "+rgn);
+				send(player, "rbuy - You are not owner of the region, neither is this your offer: "+rgn);
 				return false;
 			}
 		}
 		// owner of region or offer can remove it
 		removeOffer(offer);
-		player.sendMessage("rbuy - offer removed: "+rgn);
+		send(player, "rbuy - offer removed: "+rgn);
 		changed = true;
 		return true;
 	}
@@ -1190,7 +1185,6 @@ public class Rbuy extends JavaPlugin{
 		if (playername.equalsIgnoreCase(dom.toPlayersString())) return true;
 		return false;
 	}
-
 
 	/**
 	 * Check for ownership issues. 
@@ -1377,12 +1371,12 @@ public class Rbuy extends JavaPlugin{
 		World world = player.getWorld();
 		Offer offer = getOffer(regionName, world.getName());
 		if ( offer == null ){
-			player.sendMessage("rbuy - In this world there is no offer for: "+regionName);
+			send(player, "rbuy - In this world there is no offer for: "+regionName);
 			return false;
 		}
 		String playerName = player.getName();
 		if (playerName.equalsIgnoreCase(offer.benefits)){
-			player.sendMessage("rbuy - Your offer: "+offer.regionName);
+			send(player, "rbuy - Your offer: "+offer.regionName);
 			return false;
 		}
 		
@@ -1392,13 +1386,13 @@ public class Rbuy extends JavaPlugin{
 				String msg = "rbuy - You can only buy "+this.maxBuy+" regions";
 				if ( this.maxBuy>0 ) msg += " within "+this.timeCountBuy+" days.";
 				else msg += ".";
-				player.sendMessage(msg);
+				send(player, msg);
 				return false;
 			}
 		}
 		String benefits = offer.benefits;
 		if ( benefits == null ){
-			player.sendMessage("rbuy - Expect the name of the seller to be set, to benefit from the transaction.");
+			send(player, "rbuy - Expect the name of the seller to be set, to benefit from the transaction.");
 			// TODO: policy / defaultName, anonymous transaction.
 			removeOffer(offer);
 			changed = true;
@@ -1406,12 +1400,12 @@ public class Rbuy extends JavaPlugin{
 		}
 		ProtectedRegion region = getRegion(world, regionName);
 		if ( region == null){
-			player.sendMessage("rbuy - The region seems not to exist in this world: "+regionName);
+			send(player, "rbuy - The region seems not to exist in this world: "+regionName);
 			// keep, in case it is diferent managers for different worlds.
 			return false;
 		}
 		if ( !this.canSellRegion(benefits, region)){
-			player.sendMessage("rbuy - The player "+benefits+" is not authorized to sell the region: "+regionName);
+			send(player, "rbuy - The player "+benefits+" is not authorized to sell the region: "+regionName);
 			removeOffer(offer);
 			changed = true;
 			return false;
@@ -1423,7 +1417,7 @@ public class Rbuy extends JavaPlugin{
 				String msg = "rbuy - The area of the regions bought by you is too big in total";
 				if ( this.timeCountArea == 0 ) msg += "."; // TODO: timeCountBuy/timeCountTransaction
 				else msg += " (counting the last "+ this.timeCountArea+" days).";
-				player.sendMessage(msg);
+				send(player, msg);
 				return false;
 			}
 		}
@@ -1433,12 +1427,12 @@ public class Rbuy extends JavaPlugin{
 				String msg = "rbuy - The volume of the regions bought by you is too big in total";
 				if ( this.timeCountVolume == 0 ) msg += "."; // TODO: timeCountBuy/timeCountTransaction
 				else msg += " (counting the the last "+ this.timeCountVolume+" days).";
-				player.sendMessage(msg);
+				send(player, msg);
 				return false;
 			}
 		}
 		if (!checkDistance(player, region, distanceBuy) && !hasPermission(player, "rbuy.distance-buy")){
-			player.sendMessage("rbuy - You are too far from the region to buy it, you must be within "+this.distanceBuy+" blocks of it.");
+			send(player, "rbuy - You are too far from the region to buy it, you must be within "+this.distanceBuy+" blocks of it.");
 			return false;
 		}
 		if (getAdmittanceEconomyInterface().transfer(player, benefits, offer.amount, offer.currency)){
@@ -1457,9 +1451,9 @@ public class Rbuy extends JavaPlugin{
 			// TODO: policy for the seller ?
 			changed = true;
 			// TODO: simple message like "(region ... bought.)" in case the economy plugin messages the sender as well.
-			player.sendMessage("rbuy - You bought the region "+regionName+" from "+benefits+" for "+offer.amount+" "+offer.currency);
+			send(player, "rbuy - You bought the region "+regionName+" from "+benefits+" for "+offer.amount+" "+offer.currency);
 		} else{
-			player.sendMessage("rbuy - the transaction failed.");
+			send(player, "rbuy - the transaction failed.");
 			if ( info.isEmpty() ){
 				this.infos.remove(playerName.toLowerCase());
 				changed = true;
@@ -1468,15 +1462,12 @@ public class Rbuy extends JavaPlugin{
 		return true;
 	}
 
-
-
 	public static void setExclusiveOwner(String playerName, ProtectedRegion region) {
 		region.setMembers(new DefaultDomain());
 		DefaultDomain dom = new DefaultDomain();
 		dom.addPlayer(playerName);
 		region.setOwners(dom);
 	}
-
 
 	/**
 	 * Check if player is within distance of region (cuboid!)
@@ -1523,8 +1514,6 @@ public class Rbuy extends JavaPlugin{
 		if ( z > maxZ + distance) return false;
 		return true;
 	}
-
-
 
 	public static long getArea(ProtectedRegion region) {
 		BlockVector min = region.getMinimumPoint();
@@ -1592,13 +1581,17 @@ public class Rbuy extends JavaPlugin{
 		if ( lines == null ) return false;
 		String firstLine = lines[0].trim().toLowerCase();
 		if (!magicWordsBuy.contains(firstLine)) return false;
+		if ( !active){
+			send(player, "rbuy - All functionality is disabled temporarily.");
+			return true;
+		}
 		String secondLine = lines[1].trim().toLowerCase();
 		Offer offer = getOffer(secondLine, player.getWorld().getName());
 		if ( offer == null ){
-			player.sendMessage("rbuy - There is no region '"+lines[1]+"' for sale in this world.");
+			send(player, "rbuy - There is no region '"+lines[1]+"' for sale in this world.");
 			return true; 
 		} else if (!player.getWorld().getName().equalsIgnoreCase(offer.worldName)){
-			player.sendMessage("rbuy - Buying regions cross-world is not supported (anymore/yet).");
+			send(player, "rbuy - Buying regions cross-world is not supported (anymore/yet).");
 			return true;
 		}
 		boolean isOwner = player.getName().equalsIgnoreCase(offer.benefits);
@@ -1618,8 +1611,8 @@ public class Rbuy extends JavaPlugin{
 		if (setFromOffer){
 			String amount = getSmallestString(offer.amount);
 			if ( amount.length() > 15 ){
-				player.sendMessage("rbuy - The price does not fit on the sign, type for buying:");
-				player.sendMessage(ChatColor.GREEN+"      /rbuy "+offer.regionName);
+				send(player, "rbuy - The price does not fit on the sign, type for buying:");
+				send(player, ChatColor.GREEN+"      /rbuy "+offer.regionName);
 				sign.setLine(2, "?");
 				sign.update();
 				return true;
@@ -1627,18 +1620,18 @@ public class Rbuy extends JavaPlugin{
 			sign.setLine(2, amount);
 			String currency = getCurrency(offer.currency);
 			if ( currency.length() >15 ){
-				player.sendMessage("rbuy - The currency does not fit on the sign, type for buying:");
-				player.sendMessage(ChatColor.GREEN+"      /rbuy "+offer.regionName);
+				send(player, "rbuy - The currency does not fit on the sign, type for buying:");
+				send(player, ChatColor.GREEN+"      /rbuy "+offer.regionName);
 				sign.setLine(3, "?");
 				sign.update();
 				return true;
 			}
 			sign.setLine(3, currency);
-			player.sendMessage ("rbuy - Updated the price, right-click to buy.");
+			send(player, "rbuy - Updated the price, right-click to buy.");
 			sign.update();
 			return true;
 		} else if (isOwner){
-			player.sendMessage("rbuy - The offer is valid.");
+			send(player, "rbuy - The offer is valid.");
 		} else{
 			// process buy: delegates to the command-processing method.
 			processCommand(player, null, "rbuy", new String[]{offer.regionName});
@@ -1680,8 +1673,12 @@ public class Rbuy extends JavaPlugin{
 			/// ok
 		} else return false;
 		Player player = event.getPlayer();
+		if ( !active){
+			send(player, "rbuy - All functionality is disabled temporarily.");
+			return true;
+		}
 		if ( !hasPermission(player, "rbuy.sell") ){
-			player.sendMessage("rbuy - You don't have permission to sell regions.");
+			send(player, "rbuy - You don't have permission to sell regions.");
 			return true;
 		}
 		String secondLine = lines[1].trim().toLowerCase();
@@ -1690,12 +1687,12 @@ public class Rbuy extends JavaPlugin{
 			// Attempt to find the region associated with it.
 			List<ProtectedRegion> regions = getSellableRegions(player, loc);
 			if ( regions.size() == 0 ){
-				player.sendMessage("rbuy - There is no sellable region at the given position.");
+				send(player, "rbuy - There is no sellable region at the given position.");
 				return true;
 			} else if ( regions.size() == 1 ){
 				secondLine = regions.get(0).getId();
 				if ( secondLine.length()>15){
-					player.sendMessage("rbuy - The region name is too long to fit on a sign: "+secondLine);
+					send(player, "rbuy - The region name is too long to fit on a sign: "+secondLine);
 					return true;
 				}
 				setLines = true;
@@ -1707,7 +1704,7 @@ public class Rbuy extends JavaPlugin{
 				for ( ProtectedRegion r : regions){
 					names += " "+r.getId();
 				}
-				player.sendMessage("rbuy - There is more than one sellable region at the given position:"+names);
+				send(player, "rbuy - There is more than one sellable region at the given position:"+names);
 				return true;
 			}
 		} else if (!signsOffground){
@@ -1720,7 +1717,7 @@ public class Rbuy extends JavaPlugin{
 			}
 			if ( !match ){
 				if ( !hasPermission(player, "rbuy.offground-signs")){
-					player.sendMessage("rbuy - Placing signs off region is disabled.");
+					send(player, "rbuy - Placing signs off region is disabled.");
 					return true;
 				}
 			}
@@ -1736,7 +1733,7 @@ public class Rbuy extends JavaPlugin{
 		}
 		if ( !fourthLine.equals("")) currency = fourthLine;
 		if ((amount == null) && (currency!=null)){
-			player.sendMessage("rbuy - Leave currency blank or specify a price if you want to display an existing offers price.");
+			send(player, "rbuy - Leave currency blank or specify a price if you want to display an existing offers price.");
 			return true;
 		}
 		String wn = player.getWorld().getName();
@@ -1762,7 +1759,7 @@ public class Rbuy extends JavaPlugin{
 			// (amount == null , currency == null)
 			// Attempt to fill in from offer.
 			if ( offer == null ){
-				player.sendMessage("rbuy - Specify a price, there is no offer for: "+lines[1].trim());
+				send(player, "rbuy - Specify a price, there is no offer for: "+lines[1].trim());
 				return true;
 			}
 			lines[2] = getSmallestString(offer.amount);

@@ -48,6 +48,7 @@ CHANGELOG:
 - internals: add default values as fields (prevents typos).
 - internals: Decided upon which methods/attributes to set to public visibility (for the moment).
 
+- ! rhelp text !
 - !! MAKE 100% SURE HOW TO SET / CHANGE WG-REGIONS !! grm.preload?
 - !  ? only cuboid 
 - ? bukkit : default config ?
@@ -58,17 +59,15 @@ CHANGELOG:
 - ! test selling unowned reghions with sign
 - ! ensure correct region id on signs and texts.
 - ! restricting number of commands per second per player(!)
-- ! volumen re)striction
 - ! new TEST list, LIST about settings and permissions: c,d, dv,u, LIST about all permissions c
 - ? WEPIF directly?
-- ! rhelp text !
 - ? opt: sorted lists for strings (cache!) set null on changes, resort on demand.
 - ? opt: saving strategy ? -> multiple files (per world or at least transactions, regions).)
 - ! administrative commands for removing offers of others rremove all <player>, rremove <region>
 - ? everywhere: use the "real" names but compare lowercase. + SORTING everywhere !   
 - ? more distinct information about limits ( you have xy area left within x days?)
 - ? rinfo wand, sign with rinfo
-- ! ensure a magic word buy/sell
+- ! ensure a magic word buy/sell in apply config
 
 (0.0.0)
 
