@@ -41,7 +41,9 @@ CHANGELOG:
 - internals: add default values as fields (prevents typos).
 
 
--
+- ? bukkit : default config ?
+- ! check all to/from-config for old left overs.
+- ? /rplace to place an offer for someone else (also an anonymous or special acount ?)
 - ! /rsell *
 - ! /rinfo xyz*
 - ! /rlist with options ! (list own, list own|my/other by prefix (!) etc. /rlist own, /rlist X*, /rlist own x*

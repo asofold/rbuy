@@ -324,8 +324,6 @@ public class Rbuy extends JavaPlugin{
 	int defaultMaxMapHeight = 127;
 	int maxMapHeight = defaultMaxMapHeight;
 	
-	
-	// TODO: config / use
 	/*
 	 * Only list offers from the same world on /rlist.
 	 */
@@ -496,6 +494,17 @@ public class Rbuy extends JavaPlugin{
 		this.getCurrentConfig();
 		this.applyConfig();
 	}
+	
+	public static List<String> stringList(String[] preset){
+		List<String> out = new LinkedList<String>();
+		for ( String s : preset){
+			out.add(s);
+		}
+			return out;	
+	}
+	public static List<String> stringList( String preset){
+		return stringList( new String[]{preset});
+	}
 
 	void applyConfig() {
 		// apply this.currentConfig to internals
@@ -507,21 +516,33 @@ public class Rbuy extends JavaPlugin{
 			getServer().getLogger().warning("rbuy - The configuration entry 'users-sell' is deprecated and has no function. Instead add the entry 'rbuy.sell' to  'ignore-permissions' or set it as a permission for everyone (Further check: rbuy.info, rbuy.list, rbuy.show-all).");
 		}
 		this.active = config.getBoolean("active", defaultActive);
+		this.commandsPerSecond = config.getInt("commands-per-second", defaultCommandsPerSecond);
 		this.distanceBuy = config.getInt("distance-buy", defaultDistanceBuy);
 		this.distanceSell = config.getInt("distance-sell", defaultDistanceSell);
 		this.ignorePermissions.clear(); // TODO: maybe check and warn if wrong perms ?
 		this.ignorePermissions.addAll(config.getStringList("ignore-permissions", new LinkedList<String>()));
 		this.infoRadius = config.getInt("info-radius", defaultInfoRadius);
+		this.listWorldSpecific = !config.getBoolean("list-all-worlds", false);
+		this.magicWordsBuy.clear();
+		this.magicWordsBuy.addAll(config.getStringList("magicwords-buy", stringList(defaultMagicWordBuy)));
+		this.magicWordsSell.clear();
+		this.magicWordsSell.addAll(config.getStringList("magicwords-sell", stringList(defaultMagicWordSell)));
 		this.maxArea = getLong(config, "max-area", defaultMaxArea);
 		this.maxBuy = config.getInt("max-buy",  defaultMaxBuy);
 		this.maxMapHeight = config.getInt("max-map-height", defaultMaxMapHeight);
 		this.maxOffers = config.getInt("max-offers", defaultMaxOffers);
 		this.minMapHeight = config.getInt("min-map-height", defaultMinMapHeight);
+		this.opPermissions = config.getBoolean("op-permissions", defaultOpPermissions);
 		this.showAll = config.getBoolean("show-all", defaultShowAll);
 		this.showOwn = config.getBoolean("show-own", defaultShowOwn);
+		this.showWorldName = config.getBoolean("show-worldname", defaultShowWorldName);
+		this.signsOffground = config.getBoolean("signs-offground", defaultSignsOffground);
 		this.timeCountArea = config.getInt("time-count-area", defaultTimeCountArea);
 		this.timeCountBuy = config.getInt("time-count-buy", defaultTimeCountBuy);
 		this.timeForgetTransaction = config.getInt("time-forget-transaction", defaultTimeForgetTransaction);
+		this.useBukkitPerms = config.getBoolean("use-bukkit-perms", defaultUseBukkitPerms);
+		this.useSigns = config.getBoolean("use-signs", defaultUseSigns);
+		this.useWgPerms = config.getBoolean("use-worldguard-perms", defaultUseWgPerms);
 	}
 
 	private void setDefaultConfig() {
@@ -529,24 +550,31 @@ public class Rbuy extends JavaPlugin{
 		File file = new File(this.getDataFolder(), "rbuy.yml");
 		Configuration config = new Configuration(file);
 		config.setProperty("active", defaultActive);
+		config.setProperty("commands-per-second", defaultCommandsPerSecond);
 		config.setProperty("distance-buy", defaultDistanceBuy);
 		config.setProperty("distance-sell", defaultDistanceSell);
-		LinkedList<String> ign = new LinkedList<String>();
-		for ( String p : this.defaultIgnorePermissions){
-			ign.add(p);
-		}
-		config.setProperty("ignore-permissions", ign);
+		config.setProperty("ignore-permissions", stringList(this.defaultIgnorePermissions));
 		config.setProperty("info-radius", defaultInfoRadius);
+		config.setProperty("list-all-worlds", !defaultListWorldSpecific);
+		config.setProperty("magicwords-buy", stringList(defaultMagicWordBuy));
+		config.setProperty("magicwords-sell", stringList(defaultMagicWordSell));
 		config.setProperty("max-area", defaultMaxArea);
 		config.setProperty("max-buy", defaultMaxBuy);
 		config.setProperty("max-map-height", defaultMaxMapHeight);
 		config.setProperty("max-offers", defaultMaxOffers);
 		config.setProperty("min-map-height", defaultMinMapHeight);
+		config.setProperty("op-permissions", defaultOpPermissions);
 		config.setProperty("show-own", defaultShowOwn);
 		config.setProperty("show-all", defaultShowAll);
+		config.setProperty("show-worldname", defaultShowWorldName);
+		config.setProperty("signs-offground", defaultSignsOffground);
 		config.setProperty("time-count-area", defaultTimeCountArea);
 		config.setProperty("time-count-buy", defaultTimeCountBuy);
 		config.setProperty("time-forget-transaction", defaultTimeForgetTransaction);
+		config.setProperty("use-bukkit-perms", defaultUseBukkitPerms);
+		config.setProperty("use-signs", defaultUseSigns);
+		config.setProperty("use-worldguard-perms", defaultUseWgPerms);
+		
 		if ( !config.save()){
 			getServer().getLogger().severe("Rbuy - failed to save default configuration.");
 		}
@@ -943,7 +971,6 @@ public class Rbuy extends JavaPlugin{
 			send(sender, "rbuy - Showing all entries is disabled.");
 			return;
 		}
-		
 		String wn = "";
 		boolean worldSpecific = this.listWorldSpecific;
 		if ( sender instanceof Player ){
@@ -1745,25 +1772,6 @@ public class Rbuy extends JavaPlugin{
 		}
 		return candidates;
 	}
-	
-	
-	
-//	/**
-//	 * Return all regions at the given location, for which the player is the exclusive owner.
-//	 * @param playerName
-//	 * @param loc
-//	 * @return
-//	 */
-//	public List<ProtectedRegion> getExcOwnedRegions(String playerName, Location loc){
-//		ApplicableRegionSet set = getWorldGuard().getRegionManager(loc.getWorld()).getApplicableRegions(loc);
-//		List<ProtectedRegion> candidates = new LinkedList<ProtectedRegion>();
-//		for (ProtectedRegion region : set){
-//			if (isExclusiveOwner(playerName, region)){
-//				candidates.add(region);
-//			}
-//		}
-//		return candidates;
-//	}
 
 	public static void popSign(Block block) {
 		Material mat = block.getType();
