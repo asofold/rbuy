@@ -33,6 +33,7 @@ import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerListener;
+import org.bukkit.event.player.PlayerPreLoginEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -127,7 +128,7 @@ public class Rbuy extends JavaPlugin{
 			if ( !useSigns) return;
 			if (processSignChange(event)){
 				event.setCancelled(true);
-				popSign(event.getBlock());
+				removeSign(event.getBlock());
 			}
 		}
 	}
@@ -396,10 +397,9 @@ public class Rbuy extends JavaPlugin{
 	 * Commands to be registered.
 	 */
 	String[] cmds = new String[]{
-			"rbuy", "rsell", "rlist", "rinfo", "rhelp", "rreload", "renable", "rdisable",
-			"rremove"
+			"rbuy", "rsell", "rlist", "rinfo", "rhelp", 
+			"rreload", "renable", "rdisable", "rremove"
 		};
-	
 	
 	/**
 	 * Milliseconds per day.
@@ -774,7 +774,7 @@ public class Rbuy extends JavaPlugin{
 			send(sender, "rbuy - No help available, use /rbuy for a short comand listing.");
 			return true;
 		} else if ((length==0)&&(label.equalsIgnoreCase("rbuy"))){
-			send(sender, "rbuy - /rbuy <region> | /rsell <region> <price> [<currency>] ; /rsell <region> ; /rsell | /rlist ; /rlist <player> | /rinfo <region> | /rreload | /renable ; /rdisable | /rhelp");
+			send(sender, "rbuy - /rbuy <region> | /rsell <region> <price> [<currency>] ; /rsell <region> ; /rsell | /rlist | /rinfo <region> | /rremove ... | /rreload | /renable ; /rdisable | /rhelp");
 			return true;
 		}
 		
@@ -832,6 +832,10 @@ public class Rbuy extends JavaPlugin{
 				return false;
 			}
 		} else if (label.equalsIgnoreCase("rinfo")){
+			if ( !hasPermission(sender, "rbuy.info")){
+				send(sender, "rbuy - You don't have permission.");
+				return false;
+			}
 			if ( (length ==1)  ){
 				// most detailed info
 				if ( sender instanceof Player){
@@ -848,6 +852,10 @@ public class Rbuy extends JavaPlugin{
 			}
 			return true;
 		} else if (label.equalsIgnoreCase("rlist")){
+			if ( !hasPermission(sender, "rbuy.list")){
+				send(sender, "rbuy - You don't have permission.");
+				return false;
+			}
 			// just show names
 			showAllOffers(sender);
 			return true;
@@ -856,7 +864,7 @@ public class Rbuy extends JavaPlugin{
 				send(sender,"rbuy - You don't have permission.");
 				return false;
 			}
-			this.saveData();
+			this.saveData(); // TODO: rethink this - maybe if (this.changed) ...
 			this.reloadConfig();
 			this.loadData();
 			send( sender, "rbuy - Reloaded configuration.");
@@ -877,12 +885,133 @@ public class Rbuy extends JavaPlugin{
 			setActive(false);
 			send(sender, "rbuy - Active (possibly till next reload, only).");
 			return true;
+		} else if (label.equalsIgnoreCase("rremove")){
+			if ( !hasPermission(sender, "rbuy.remove")){
+				send(sender, "rbuy - You don't have permission.");
+				return false;
+			}
+			// rremove p:<playername> w:[<worldname>] r:<region> 
+			boolean res = processRemove(sender, args);
+			if ( this.changed ) this.saveData(); 
+			return res;
 		}
 		
 		send(sender, "rbuy - unknown options/command: "+label);
 		return false;
 	}
 	
+	/**
+	 * Remove offers for players, worlds, regions.
+	 * Args will have prefixes like 'w:', 'p:' or 'r:',
+	 * then r/w allow for a '*' entry as well as prefix* entries,
+	 * while p only allows for full player names or '*' for all.
+	 * Given player names will lead to only removing regions for the given players.
+	 * Worlds will include all given worlds.
+	 * Regions will include all given regions.
+	 * If a player calls this and does not specify a world, the world the player is in is used, other CommandSenders must specify a world.
+	 * @param sender
+	 * @param args
+	 * @return
+	 */
+	boolean processRemove(CommandSender sender, String[] args) {
+		if ( args.length == 0 ){
+			send(sender, "rbuy - Expect a specification what to remove (Arguments can be: p:<player> or p:* for players, r:<region> or r:* or r:<prefix>* for regions, w:<world> or w:* or w:<prefix>* for worlds).");
+			return false;
+		}
+		Set<String> worlds = new HashSet<String>();
+		Set<String> players = new HashSet<String>();
+		Set<String> regions = new HashSet<String>();
+		List<String> worldPrefixes = new LinkedList<String>();
+		List<String> regionPrefixes = new LinkedList<String>();
+		boolean allWorlds = false;
+		boolean allPlayers = false;
+		boolean allRegions = false;
+		// process args:
+		for (String arg : args){
+			arg = arg.trim();
+			if ( (arg.length()>2) && (arg.charAt(1)==':')){
+				char tp = arg.charAt(0); // type 
+				arg = arg.substring(2).toLowerCase();
+				if (tp=='p'){
+					if (arg.equalsIgnoreCase("*")) allPlayers = true;
+					else players.add(arg);
+				} else if (tp=='r'){
+					if (arg.equalsIgnoreCase("*")) allRegions = true;
+					else if (arg.endsWith("*")) regionPrefixes.add(arg.substring(0, arg.length()-1));
+					else regions.add(arg);
+				} else if (tp=='w'){
+					if (arg.equalsIgnoreCase("*")) allWorlds = true;
+					else if (arg.endsWith("*")) worldPrefixes.add(arg.substring(0, arg.length()-1));
+					else worlds.add(arg);
+				} else{
+					send( sender, "rbuy - Bad specification for rremove: "+tp+":"+arg);
+					return false;
+				}
+			} else {
+				send(sender, "rbuy: Bad specification for rremove: "+arg);
+				return false;
+			}
+		}
+		if (!allWorlds){
+			if ( worlds.isEmpty() && worldPrefixes.isEmpty() ){
+				if ( sender instanceof Player){
+					worlds.add(((Player)sender).getWorld().getName().trim().toLowerCase());
+				} else{
+					send(sender, "rbuy - Non players must specify a world from which to remove offers.");
+					return false;
+				}
+			}
+		}
+		if (!allPlayers && players.isEmpty()){
+			send(sender, "rbuy - Must specify player(s) for rremove.");
+			return false;
+		} 
+		if (!allRegions && regions.isEmpty() && regionPrefixes.isEmpty()){
+			send(sender, "rbuy - Must specify region(s) for rremove.");
+			return false;
+		}
+		// One could optimize this (if !allPlayers -> go through player infos instead), but this is not called very often, presumably.
+		List<Offer> removeThese = new LinkedList<Offer>();
+		for ( String wn : this.offers.keySet()){
+			if ( allWorlds || matches(wn, worlds, worldPrefixes)){
+				Map<String, Offer> offers =this.offers.get(wn);
+				if ( offers == null) continue; // throw new IllegalStateException
+				for ( String rn : offers.keySet() ){
+					if ( allRegions || matches(rn, regions,regionPrefixes)){
+						Offer offer = offers.get(rn);
+						if (offer == null) continue; // throw new ...
+						if (allPlayers || players.contains(offer.benefits.toLowerCase())) removeThese.add(offer);
+					}
+				}
+			}
+		}
+		if ( !removeThese.isEmpty()){
+			for ( Offer offer : removeThese) this.removeOffer(offer);
+			this.changed = true;
+		}
+		send(sender, "rbuy - Removed "+removeThese.size()+" offers.");
+		return true;
+	}
+	
+	/**
+	 * Check if a given String matches either directly or one of the prefixes - case sensitive (!).
+	 * Allows null on each argument.
+	 * @param item
+	 * @param fullRef
+	 * @param prefixRef
+	 * @return
+	 */
+	public static boolean matches(String item, Set<String> fullRef, List<String> prefixRef){
+		if ( item==null ) return false;
+		if ( (fullRef != null) && fullRef.contains(item)) return true;
+		if ( prefixRef != null ){
+			for ( String ref : prefixRef){
+				if ( item.startsWith(ref)) return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Show region offers that are nearby the players current location.
 	 * @param player
@@ -1120,16 +1249,27 @@ public class Rbuy extends JavaPlugin{
 	}
 
 	boolean processCancelOffer(Player player, String rgn) {
-		String rn = rgn.trim().toLowerCase();
 		String wn = player.getWorld().getName();
-		Offer offer = getOffer(rgn,wn);
-		if ( offer == null ){
-			send(player, "rbuy - No offer in world '"+wn+"' for region: "+rn);
+		String playerName = player.getName();
+		if ( rgn.equalsIgnoreCase("*")){
+			PlayerInfo info = getPlayerInfo(playerName);
+			List<Offer> offers = new LinkedList<Offer>();
+			offers.addAll(info.offers);
+			for ( Offer offer: offers){
+				removeOffer(offer);
+			}
+			send(player, "rbuy - Removed all offers ("+offers.size()+").");
 			return true;
 		}
-		if ( !player.getName().equalsIgnoreCase(offer.benefits)){
+		
+		Offer offer = getOffer(rgn,wn);
+		if ( offer == null ){
+			send(player, "rbuy - No offer in world '"+wn+"' for region: "+rgn);
+			return true;
+		}
+		if ( !playerName.equalsIgnoreCase(offer.benefits)){
 			World world = player.getWorld();
-			ProtectedRegion region = getRegion(world, rn);
+			ProtectedRegion region = getRegion(world, rgn);
 			if ( region == null){
 				send(player, "rbuy - the region does not exist: "+rgn);
 				return false;
@@ -1816,8 +1956,12 @@ public class Rbuy extends JavaPlugin{
 		}
 		return candidates;
 	}
-
-	public static void popSign(Block block) {
+	
+	/**
+	 * Just remove the sign and drop it "naturally".
+	 * @param block
+	 */
+	public static void removeSign(Block block) {
 		Material mat = block.getType();
 		if ( (mat==Material.SIGN) || (mat==Material.SIGN_POST)){
 			block.setType(Material.AIR);

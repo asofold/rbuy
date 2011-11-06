@@ -28,7 +28,9 @@ CHANGELOG:
 (0.1.0)
 - add: sign support both for selling and buying.
 - add: magic words for signs (not for commands).
-- add: volumen restriction
+- add: '/rsell *' removes all regions you offered for sale. 
+- add: Administrative command /rremove with flexible arguments specifying players, worlds, regions (All, specific, region or world prefixes, multiple arguments for each type).
+- add: volume restriction
 - add: negative entries for times default along the chain volume->area->buy->transaction(end)
 - remove: users-buy, users-sell configuration options.
 - add: ignore-permissions configuration option.
@@ -36,7 +38,7 @@ CHANGELOG:
 - add: commands per second limit.
 - change: default policy is to DENY permissions for everything.
 - add: sort displayed regions by name (hopefully everywhere).
-- add: configuration entry oppermissions
+- add: configuration entry op-permissions
 - add: permission nodes for bypasses including "all".
 - add: configuration option: list-all-worlds
 - bugfix: Multiple worlds compatibility: cross world  buying is now impossible, neither for regions with same names nor in general.
@@ -63,7 +65,6 @@ CHANGELOG:
 - ? WEPIF directly?
 - ? opt: sorted lists for strings (cache!) set null on changes, resort on demand.
 - ? opt: saving strategy ? -> multiple files (per world or at least transactions, regions).)
-- ! administrative commands for removing offers of others rremove all <player>, rremove <region>
 - ? everywhere: use the "real" names but compare lowercase. + SORTING everywhere !   
 - ? more distinct information about limits ( you have xy area left within x days?)
 - ? rinfo wand, sign with rinfo
@@ -90,7 +91,7 @@ TESTS (0.0.0):
 -------------------------------------------------------------
 
 SCHEDULE:
-
+- ! command based inspection methods for listing area/volume, transactions, whatever for players + manipulation.
 - ! flat file strategy -> less space, faster ? separate offers, transactions files, world specific ?
 - ! custom language
 - ! more testing
