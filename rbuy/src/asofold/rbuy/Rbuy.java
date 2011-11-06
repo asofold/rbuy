@@ -640,7 +640,7 @@ public class Rbuy extends JavaPlugin{
 		config.load();
 		long tsLoad = System.currentTimeMillis();
 		// construct data from config.
-		
+		int nOffers = 0;
 		// transactions:
 		String prefix = "transactions";
 		List<String> keys = config.getKeys(prefix);
@@ -673,12 +673,13 @@ public class Rbuy extends JavaPlugin{
 					info.offers.add(offer);
 					// TODO: check if already in ?
 					putOffer(offer);
+					nOffers++;
 				} else {
 					getServer().getLogger().warning("rbuy - Could not load offer: "+key);
 				}
 			}
 		}
-		System.out.println("rbuy - load data: "+offers.size() +" offers, "+transactions.size()+" transactions.");
+		System.out.println("rbuy - load data: "+nOffers +" offers, "+transactions.size()+" transactions.");
 	}
 	
 	/**
@@ -857,7 +858,8 @@ public class Rbuy extends JavaPlugin{
 				return false;
 			}
 			// just show names
-			showAllOffers(sender);
+			if ( length == 0) showAllOffers(sender, null);
+			else if ( length == 1 ) showAllOffers(sender, args[0]);
 			return true;
 		} else if (label.equalsIgnoreCase("rreload")){
 			if ( !hasPermission(sender, "rbuy.reload")){
@@ -1119,11 +1121,12 @@ public class Rbuy extends JavaPlugin{
 	 * 
 	 * @param sender
 	 */
-	void showAllOffers(CommandSender sender) {
+	void showAllOffers(CommandSender sender, String prefix) {
 		if ( !showAll && (sender instanceof Player) && !hasPermission((Player)sender, "rbuy.show-all") ){
 			send(sender, "rbuy - Showing all entries is disabled.");
 			return;
 		}
+		if ( prefix != null) prefix = prefix.toLowerCase();
 		String wn = "";
 		boolean worldSpecific = this.listWorldSpecific;
 		if ( sender instanceof Player ){
@@ -1131,11 +1134,12 @@ public class Rbuy extends JavaPlugin{
 		} else worldSpecific = false;
 		boolean found = false;
 		for ( String worldName : this.offers.keySet()){
-			Map<String, Offer> offers = this.offers.get(wn);
+			Map<String, Offer> offers = this.offers.get(worldName);
 			if ( offers != null){
 				if ( worldSpecific &&  !wn.equalsIgnoreCase(worldName)) continue;
 				StringBuilder builder = new StringBuilder ();
 				for (String rn : sortedStrings(offers.keySet())){
+					if ((prefix!=null) && !rn.startsWith(prefix) ) continue;
 					Offer offer = offers.get(rn);
 					builder.append(" "+offer.regionName);
 					// maybe check for consistency (worldName) later on.
@@ -1234,7 +1238,10 @@ public class Rbuy extends JavaPlugin{
 				return false;
 			}
 		}
-		if ( !region.hasMembersOrOwners())setExclusiveOwner(playerName, region); // TODO: subject to policy 
+		if ( !region.hasMembersOrOwners()){
+			// (has been checked above already: permission "rbuy.sell-unowned")
+			setExclusiveOwner(playerName, region); // TODO: subject to policy 
+		}
 		Offer offer = new Offer();
 		offer.benefits = playerName;
 		offer.regionName = rgn;
@@ -1306,7 +1313,7 @@ public class Rbuy extends JavaPlugin{
 	boolean canSellRegion(String playername, ProtectedRegion region){
 		if ( !region.hasMembersOrOwners() ){
 			// policy, keep it in mind (!).
-			return true;
+			return false;
 		}
 		return isExclusiveOwner(playername , region);
 	}
@@ -1377,6 +1384,7 @@ public class Rbuy extends JavaPlugin{
 		}
 		if ( !rem.isEmpty()){
 			info.transactions.removeAll(rem);
+			this.transactions.removeAll(rem);
 			changed = true;
 		}
 		return n;
@@ -1398,6 +1406,7 @@ public class Rbuy extends JavaPlugin{
 			else if ( ta.timestamp >= tsExpireBuy) a += ta.area;
 		}
 		if ( !rem.isEmpty()){
+			this.transactions.removeAll(rem);
 			info.transactions.removeAll(rem);
 			changed = true;
 		}
@@ -1415,13 +1424,14 @@ public class Rbuy extends JavaPlugin{
 		LinkedList<Transaction> rem = new LinkedList<Transaction>();
 		long v = 0;
 		long tsExpireTa = ts - timeForgetTransaction*msDay;
-		long tsExpireBuy = ts - timeCountArea*msDay;
+		long tsExpireBuy = ts - timeCountVolume*msDay;
 		for ( Transaction ta: info.transactions){
 			if ( ta.timestamp < tsExpireTa ) rem.add(ta);
 			else if ( ta.timestamp >= tsExpireBuy) v += ta.volume;
 		}
 		if ( !rem.isEmpty()){
 			info.transactions.removeAll(rem);
+			this.transactions.removeAll(rem);
 			changed = true;
 		}
 		return v;
@@ -1437,6 +1447,7 @@ public class Rbuy extends JavaPlugin{
 		Map<String, Offer> rMap  = this.offers.get(worldName.toLowerCase());
 		if (rMap == null) return null;
 		Offer offer = rMap.get(regionName.toLowerCase());
+		if ( offer == null ) return null;
 		// direct return should be possible.
 		if ( offer.worldName.equalsIgnoreCase(worldName)){
 			// success
@@ -1586,6 +1597,7 @@ public class Rbuy extends JavaPlugin{
 			ta.amount = offer.amount;
 			ta.currency = getCurrency(offer.currency);
 			ta.area = area;
+			ta.volume = volume;
 			this.transactions.add(ta);
 			info.transactions.add(ta);
 			// TODO: policy for the seller ?
@@ -1658,7 +1670,7 @@ public class Rbuy extends JavaPlugin{
 	public static long getArea(ProtectedRegion region) {
 		BlockVector min = region.getMinimumPoint();
 		BlockVector max = region.getMaximumPoint();
-		return Math.abs(max.getBlockX()-min.getBlockX())*Math.abs(max.getBlockZ()-min.getBlockZ());
+		return Math.abs(max.getBlockX()-min.getBlockX()+1)*Math.abs(max.getBlockZ()-min.getBlockZ()+1);
 	}
 	
 	public static ArrayList<String> sortedStrings(Collection<String> ref){

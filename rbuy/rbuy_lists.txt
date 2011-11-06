@@ -14,8 +14,11 @@ NOTES:
 	rbuy.max-offers
 	rbuy.distance-sell
 	rbuy.max-area
+	rbuy.max-volume
 	rbuy.sell-unowned
 	rbuy.show-all
+	rbuy.list
+	rbuy.info
 	rbuy.all
 	
 - configuration: ...
@@ -28,6 +31,7 @@ CHANGELOG:
 (0.1.0)
 - add: sign support both for selling and buying.
 - add: magic words for signs (not for commands).
+- add: '/rlist <region/prefix>' lists all region starting with the specified prefix.
 - add: '/rsell *' removes all regions you offered for sale. 
 - add: Administrative command /rremove with flexible arguments specifying players, worlds, regions (All, specific, region or world prefixes, multiple arguments for each type).
 - add: volume restriction
@@ -39,36 +43,22 @@ CHANGELOG:
 - change: default policy is to DENY permissions for everything.
 - add: sort displayed regions by name (hopefully everywhere).
 - add: configuration entry op-permissions
+- note: op-permissions are dependent on the permissions plugin / WorldGuard.
 - add: permission nodes for bypasses including "all".
 - add: configuration option: list-all-worlds
+- change: Unowned regions can not be bought anymore (If offered for sale and the player has the permission 'rbuy.sell-unwoned', the owner will be set to the seller.).
 - bugfix: Multiple worlds compatibility: cross world  buying is now impossible, neither for regions with same names nor in general.
 - bugfix: The area is now written/read  correctly from transaction entries of the data file.
-- note: op-permissions are dependent on the permissions plugin / WorldGuard.
+- bugfix: removing expired transactions is now done correctly on checking a players transactions (little effect if the server reloads plugins daily).
+- bugfix: The global region '__global__' can not be sold anymore (should have lead to exceptions anyway...).
 - fix: prevent selling the global region.
 - internals: adjusted many places to cover null inputs, demand world names to be not null on loading.
 - internals: add some javadoc comments.
 - internals: add default values as fields (prevents typos).
 - internals: Decided upon which methods/attributes to set to public visibility (for the moment).
+ 
 
-- ! rhelp text !
-- !! MAKE 100% SURE HOW TO SET / CHANGE WG-REGIONS !! grm.preload?
-- !  ? only cuboid 
-- ? bukkit : default config ?
-- ? /rplace to place an offer for someone else (also an anonymous or special acount ?)
-- ! /rsell *
-- ! /rinfo xyz*
-- ! /rlist with options ! (list own, list own|my/other by prefix (!) etc. /rlist own, /rlist X*, /rlist own x*
-- ! test selling unowned reghions with sign
-- ! ensure correct region id on signs and texts.
-- ! restricting number of commands per second per player(!)
-- ! new TEST list, LIST about settings and permissions: c,d, dv,u, LIST about all permissions c
-- ? WEPIF directly?
-- ? opt: sorted lists for strings (cache!) set null on changes, resort on demand.
-- ? opt: saving strategy ? -> multiple files (per world or at least transactions, regions).)
-- ? everywhere: use the "real" names but compare lowercase. + SORTING everywhere !   
-- ? more distinct information about limits ( you have xy area left within x days?)
-- ? rinfo wand, sign with rinfo
-- ! ensure a magic word buy/sell in apply config
+***
 
 (0.0.0)
 
@@ -91,10 +81,21 @@ TESTS (0.0.0):
 -------------------------------------------------------------
 
 SCHEDULE:
+- !! CLEAN UP THIS LIST , MOVE FROM sCHEDULE / DELETE ENTRIES WHEE APPROPRIATE
+
+- ! COLORS
+- ! also forget transactions on save ? (not only on loading).
+- ! restricting number of commands per second per player(!)
+- ! rhelp text !
+- !! MAKE 100% SURE HOW TO SET / CHANGE WG-REGIONS !! grm.preload?
+- !  ? only cuboid 
+- ? bukkit : default config ?
+- ? /rplace to place an offer for someone else (also an anonymous or special acount ?)
+- ? /rinfo xyz*
+- ? /rlist with options ! (list own, list own|my/other by prefix (!) etc. /rlist own, /rlist X*, /rlist own x*
 - ! command based inspection methods for listing area/volume, transactions, whatever for players + manipulation.
 - ! flat file strategy -> less space, faster ? separate offers, transactions files, world specific ?
 - ! custom language
-- ! more testing
 - ? WorldGuard/worldName: ensure that the functionality is restricted to having the player and regions be in the same world, except for /rsell, probably
 - ! op commands for administraction (removing offers, transactions, all/for players, consistency checking etc., create backups..... (? for some: use with * before region name to avoid hundreds of commands ?)
 - ! ingame configuration changes 
@@ -103,6 +104,11 @@ SCHEDULE:
 - ! check worldguard selections for finding regions quickly !!!
 - ! (new)  auctions !
 - ? double comparison - use some other equality that '==', like abs <= min(0.0001, price1/1000, price2/1000 )
+- ? more distinct information about limits ( you have xy area left within x days?)
+- ? rinfo wand, sign with rinfo
+- ? opt: sorted lists for strings (cache!) set null on changes, resort on demand.
+- ? opt: saving strategy ? -> multiple files (per world or at least transactions, regions).)
+- ? WEPIF directly?
 
 MAYBE:
 - ? region specific config update settings (for distances for instance, with passthrough regions ...)
