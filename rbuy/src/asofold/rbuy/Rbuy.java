@@ -1,6 +1,7 @@
 package asofold.rbuy;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1240,7 +1241,7 @@ public class Rbuy extends JavaPlugin{
 		}
 		if ( !region.hasMembersOrOwners()){
 			// (has been checked above already: permission "rbuy.sell-unowned")
-			setExclusiveOwner(playerName, region); // TODO: subject to policy 
+			setExclusiveOwner(playerName, world, region); // TODO: subject to policy 
 		}
 		Offer offer = new Offer();
 		offer.benefits = playerName;
@@ -1587,7 +1588,7 @@ public class Rbuy extends JavaPlugin{
 			return false;
 		}
 		if (getAdmittanceEconomyInterface().transfer(player, benefits, offer.amount, offer.currency)){
-			setExclusiveOwner(playerName, region);
+			setExclusiveOwner(playerName, world,  region);
 			removeOffer(offer);
 			Transaction ta = new Transaction();
 			ta.timestamp = ts;
@@ -1614,11 +1615,17 @@ public class Rbuy extends JavaPlugin{
 		return true;
 	}
 
-	public static void setExclusiveOwner(String playerName, ProtectedRegion region) {
+	public static void setExclusiveOwner(String playerName, World world, ProtectedRegion region) {
 		region.setMembers(new DefaultDomain());
 		DefaultDomain dom = new DefaultDomain();
 		dom.addPlayer(playerName);
 		region.setOwners(dom);
+		try {
+			getWorldGuard().getRegionManager(world).save();
+		} catch (IOException e) {
+			Bukkit.getServer().getLogger().severe("rbuy - WorldGuard failed to save region "+region.getId()+" - check transactions.");
+			e.printStackTrace();
+		}
 	}
 
 	/**

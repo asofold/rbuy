@@ -20,6 +20,7 @@ NOTES:
 	rbuy.list
 	rbuy.info
 	rbuy.all
+	rbuy.offground-signs
 	
 - configuration: ...
 	usersBuy and usersSell is deprecated as of 0.0.1, use ignore-permissions and entries there	
@@ -27,6 +28,11 @@ NOTES:
 ---------------------------------------------------------
 	
 CHANGELOG:
+
+(0.1.1)
+- bugfix: Force WorldGuard to save regions on changes. (Prevents the buyer losing ownership to the seller in case of crashes and other.)
+
+***
 
 (0.1.0)
 - add: sign support both for selling and buying.
