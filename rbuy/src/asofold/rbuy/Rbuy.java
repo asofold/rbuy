@@ -98,7 +98,7 @@ public class Rbuy extends JavaPlugin{
 			if ( action == Action.RIGHT_CLICK_BLOCK){
 				Block block = event.getClickedBlock();
 				Material mat = block.getType();
-				if ( (mat == Material.SIGN) || (mat == Material.SIGN_POST) ){
+				if ( (mat == Material.SIGN) || (mat == Material.SIGN_POST) || (mat == Material.WALL_SIGN)){
 					BlockState state = block.getState();
 					if ( state instanceof Sign){
 						if (plugin.processSignInteract(event.getPlayer(), (Sign) state)){

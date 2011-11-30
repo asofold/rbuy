@@ -29,6 +29,12 @@ NOTES:
 	
 CHANGELOG:
 
+- ? (internal) add META-INF folder with classpath entries. AT LEAST CHECK IF NECESSARY !
+- (internal) include WAL_SIGN on checks.
+
+
+***
+
 (0.1.1)
 - bugfix: Force WorldGuard to save regions on changes. (Prevents the buyer losing ownership to the seller in case of crashes and other.)
 
