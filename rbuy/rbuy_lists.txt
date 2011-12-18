@@ -29,9 +29,14 @@ NOTES:
 	
 CHANGELOG:
 
-- ? (internal) add META-INF folder with classpath entries. AT LEAST CHECK IF NECESSARY !
-- (internal) include WAL_SIGN on checks.
 
+
+* (0.1.2)
+- ! cap-list conf entry: cap at such number of entries and write '... (xyz more)'
+- ? (internal) add META-INF folder with classpath entries. AT LEAST CHECK IF NECESSARY !
+
+- (internals) include WAL_SIGN on checks.
+- (internals) Add softdepend for WordlGuard, WorldEdit, admittance
 
 ***
 

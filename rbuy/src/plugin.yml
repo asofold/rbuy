@@ -1,6 +1,10 @@
 name: rbuy
 main: asofold.rbuy.Rbuy
-version: 0.1.1 beta
+version: 0.1.2 beta
+softdepend:
+- WorldGuard
+- WorldEdit
+- admittance
 
 commands:
   rbuy: 
