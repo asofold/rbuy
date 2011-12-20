@@ -923,6 +923,7 @@ public class Rbuy extends JavaPlugin{
 		Set<String> worlds = new HashSet<String>();
 		Set<String> players = new HashSet<String>();
 		Set<String> regions = new HashSet<String>();
+		Set<String> newOwners = new HashSet<String>();
 		List<String> worldPrefixes = new LinkedList<String>();
 		List<String> regionPrefixes = new LinkedList<String>();
 		boolean allWorlds = false;
@@ -945,7 +946,18 @@ public class Rbuy extends JavaPlugin{
 					if (arg.equalsIgnoreCase("*")) allWorlds = true;
 					else if (arg.endsWith("*")) worldPrefixes.add(arg.substring(0, arg.length()-1));
 					else worlds.add(arg);
-				} else{
+				} else if (tp=='x') {
+					// special commands
+					String lcArg = arg.toLowerCase();
+					if (lcArg.startsWith("own:")){
+						if ( arg.length()>4){
+							newOwners.add(arg.substring(4, arg.length()));
+						}
+					} else{
+						send( sender, "rbuy - Bad specification of sub command for rremove: "+tp+":"+arg);
+						return false;
+					}
+				}else{
 					send( sender, "rbuy - Bad specification for rremove: "+tp+":"+arg);
 					return false;
 				}
@@ -988,13 +1000,74 @@ public class Rbuy extends JavaPlugin{
 			}
 		}
 		if ( !removeThese.isEmpty()){
-			for ( Offer offer : removeThese) this.removeOffer(offer);
+			if ( !newOwners.isEmpty()){
+				for ( Offer offer : removeThese){
+					setOwners(offer.worldName, offer.regionName, newOwners);
+				}
+				if ( allWorlds) saveRegions(null);
+				else saveRegions(worlds);
+			}
+			for ( Offer offer : removeThese){
+				this.removeOffer(offer);
+			}
 			this.changed = true;
 		}
 		send(sender, "rbuy - Removed "+removeThese.size()+" offers.");
 		return true;
 	}
 	
+	/**
+	 * NOTE: DOES NOT SAVE REGIONS, call saveRegions
+	 * @param worldName
+	 * @param regionName
+	 * @param newOwners
+	 */
+	public static void setOwners(String worldName, String regionName,
+			Set<String> newOwners) {
+		World world = Bukkit.getServer().getWorld(worldName);
+		if ( world == null) return;
+		RegionManager man = getWorldGuard().getRegionManager(world);
+		ProtectedRegion region = man.getRegion(regionName);
+		if (region == null) return;
+		region.setMembers(new DefaultDomain());
+		DefaultDomain dom = new DefaultDomain();
+		for (String pn : newOwners){
+			dom.addPlayer(pn);
+		}
+		region.setOwners(dom);
+	}
+	
+	/**
+	 * If null given: sdave all worlds.
+	 * 
+	 * @param worldNames
+	 * @return Number of successful saves (includes non existing worlds!).
+	 */
+	public static int saveRegions( Set<String> worldNames ){
+		List<World> worlds = new LinkedList<World>();
+		int success = 0;
+		if ( worldNames== null){
+			worlds.addAll(Bukkit.getServer().getWorlds());
+		} else{
+			for ( String name : worldNames ){
+				World world = Bukkit.getServer().getWorld(name);
+				if ( world != null) worlds.add(world);
+			}
+		}
+		WorldGuardPlugin wg = getWorldGuard();
+		for (World world : worlds){
+			RegionManager man = wg.getRegionManager(world);
+			try {
+				man.save();
+				success++;
+			} catch (IOException e) {
+				Bukkit.getServer().getLogger().severe("rbuy - Failed to save regions for world: "+world.getName());
+				e.printStackTrace();
+			}
+		}
+		return success;
+	}
+
 	/**
 	 * Check if a given String matches either directly or one of the prefixes - case sensitive (!).
 	 * Allows null on each argument.
