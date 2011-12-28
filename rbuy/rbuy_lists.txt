@@ -1,5 +1,9 @@
 rbuy_lists.txt
 ------------------------------
+
+!!! CHECK CONFIGURATION USE (NON NULL RETUNR VALUES EVEN IF SET AS PRESET) !!!
+
+
 NOTES:
 
 - permissions:
@@ -34,8 +38,8 @@ CHANGELOG:
 * (0.1.3)
 - ! cap-list conf entry: cap at such number of entries and write '... (xyz more)'
 - ? (internal) add META-INF folder with classpath entries. AT LEAST CHECK IF NECESSARY !
-
 - !add option to buy/sell a region exclusively with ONE member added (!) 
+- (internals) Added compat-layer for configuration.
 
 
 

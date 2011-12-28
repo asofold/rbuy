@@ -39,7 +39,9 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.config.Configuration;
+
+import asofold.rbuy.compatlayer.CompatConfig;
+import asofold.rbuy.compatlayer.CompatConfigFactory;
 
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -148,19 +150,19 @@ public class Rbuy extends JavaPlugin{
 		public double amount = 0;
 		public String currency = null;
 		
-		public boolean fromConfig(Configuration config, String prefix){
+		public boolean fromConfig(CompatConfig config, String prefix){
 			regionName = config.getString(prefix+"regionName", null);
 			if ( regionName == null ) return false;
 			worldName = config.getString(prefix+"worldName", null);
 			if ( worldName == null) return false;
 			benefits = config.getString(prefix+"benefits", null);
 			currency = config.getString(prefix+"currency", null);
-			amount = config.getDouble(prefix+"amount", -1);
+			amount = config.getDouble(prefix+"amount", -1.0);
 			if ( amount < 0) return false;
 			return true;
 		}
 		
-		public void toConfig( Configuration config, String prefix){
+		public void toConfig( CompatConfig config, String prefix){
 			if (regionName == null) return; // set nothing.
 			config.setProperty(prefix+"regionName",	 regionName);
 			if ( worldName == null) return;
@@ -184,21 +186,21 @@ public class Rbuy extends JavaPlugin{
 		public long timestamp = 0;
 		public long area = 0;
 		public long volume = 0;
-		public boolean fromConfig(Configuration config, String prefix){
+		public boolean fromConfig(CompatConfig config, String prefix){
 			buyerName = config.getString(prefix+"buyerName", null);
 			sellerName = config.getString(prefix+"sellerName", null);
 			regionName = config.getString(prefix+"regionName", null);
-			amount = config.getDouble(prefix+"amount", 0);
+			amount = config.getDouble(prefix+"amount", 0.0);
 			currency = config.getString(prefix+"currency", null);
-			timestamp = getLong(config, prefix+"timestamp", 0L);
-			area = getLong(config, prefix+"area", 0L);
-			volume = getLong(config, prefix+"volume", area); // preset is area.
+			timestamp = config.getLong(prefix+"timestamp", 0L);
+			area = config.getLong(prefix+"area", 0L);
+			volume = config.getLong( prefix+"volume", area); // preset is area.
 			// TODO: maybe this will change some time:
 			if ( (buyerName == null) ) return false;
 			return true;
 		}
 		
-		public void toConfig( Configuration config, String prefix){
+		public void toConfig( CompatConfig config, String prefix){
 			if ( buyerName != null){
 				config.setProperty(prefix+"buyerName", buyerName);
 			}
@@ -236,7 +238,7 @@ public class Rbuy extends JavaPlugin{
 	
 	
 	// Configuration content: 
-	Configuration currentConfig = null;
+	CompatConfig currentConfig = null;
 	
 	/**
 	 * Enable/disable functionality flag.
@@ -486,11 +488,11 @@ public class Rbuy extends JavaPlugin{
 		// TODO: save config ?
 	}
 
-	public Configuration getCurrentConfig(){
+	public CompatConfig getCurrentConfig(){
 		if ( this.currentConfig == null){
 			File file = new File(this.getDataFolder(), "rbuy.yml");
 			if ( file.exists() ){
-				Configuration config = new Configuration(file);
+				CompatConfig config = CompatConfigFactory.getConfig(file);
 				config.load();
 				this.currentConfig = config;
 			} else{
@@ -520,7 +522,7 @@ public class Rbuy extends JavaPlugin{
 
 	public void applyConfig() {
 		// apply this.currentConfig to internals
-		Configuration config = this.currentConfig;
+		CompatConfig config = this.currentConfig;
 		if (config.getString("users-buy", null) != null ) {
 			getServer().getLogger().warning("rbuy - The configuration entry 'users-buy' is deprecated and has no function. Instead add the entry 'rbuy.buy' to  'ignore-permissions' or set it as a permission for everyone (Further check: rbuy.info, rbuy.list, rbuy.show-all).");
 		}
@@ -539,11 +541,11 @@ public class Rbuy extends JavaPlugin{
 		this.magicWordsBuy.addAll(config.getStringList("magicwords-buy", stringList(defaultMagicWordBuy)));
 		this.magicWordsSell.clear();
 		this.magicWordsSell.addAll(config.getStringList("magicwords-sell", stringList(defaultMagicWordSell)));
-		this.maxArea = getLong(config, "max-area", defaultMaxArea);
+		this.maxArea = config.getLong("max-area", defaultMaxArea);
 		this.maxBuy = config.getInt("max-buy",  defaultMaxBuy);
 		this.maxMapHeight = config.getInt("max-map-height", defaultMaxMapHeight);
 		this.maxOffers = config.getInt("max-offers", defaultMaxOffers);
-		this.maxVolume = getLong(config, "max-volume", defaultMaxVolume);
+		this.maxVolume = config.getLong("max-volume", defaultMaxVolume);
 		this.minMapHeight = config.getInt("min-map-height", defaultMinMapHeight);
 		this.opPermissions = config.getBoolean("op-permissions", defaultOpPermissions);
 		this.showAll = config.getBoolean("show-all", defaultShowAll);
@@ -573,7 +575,7 @@ public class Rbuy extends JavaPlugin{
 	public void setDefaultConfig() {
 		// create and safe default configuration.
 		File file = new File(this.getDataFolder(), "rbuy.yml");
-		Configuration config = new Configuration(file);
+		CompatConfig config = CompatConfigFactory.getConfig(file);
 		config.setProperty("active", defaultActive);
 		config.setProperty("commands-per-second", defaultCommandsPerSecond);
 		config.setProperty("distance-buy", defaultDistanceBuy);
@@ -615,7 +617,7 @@ public class Rbuy extends JavaPlugin{
 	 * @param preset
 	 * @return
 	 */
-	public static Long getLong(Configuration config, String key, Long preset ){
+	public static Long getLong(CompatConfig config, String key, Long preset ){
 		String candidate = config.getString(key, null);
 		if ( candidate == null) return preset;
 		if ( !(candidate instanceof String) ) candidate = candidate.toString();
@@ -636,14 +638,14 @@ public class Rbuy extends JavaPlugin{
 		this.changed = false;
 		File file = new File( getDataFolder(), "runtime.yml");
 		if ( !file.exists() ) return;
-		Configuration config = new Configuration( file);
+		CompatConfig config = CompatConfigFactory.getConfig( file);
 		config.load();
 		long tsLoad = System.currentTimeMillis();
 		// construct data from config.
 		int nOffers = 0;
 		// transactions:
 		String prefix = "transactions";
-		List<String> keys = config.getKeys(prefix);
+		List<String> keys = config.getStringKeys(prefix);
 		if (keys != null ){
 			for ( String key : keys){
 				Transaction ta = new Transaction();
@@ -664,7 +666,7 @@ public class Rbuy extends JavaPlugin{
 		}
 		// offers:
 		prefix = "offers";
-		keys = config.getKeys(prefix);
+		keys = config.getStringKeys(prefix);
 		if (keys != null ){
 			for ( String key : keys){
 				Offer offer = new Offer();
@@ -688,7 +690,7 @@ public class Rbuy extends JavaPlugin{
 	public void saveData(){
 		if ( !active ) return; // policy - prevent
 		File file = new File( getDataFolder(), "runtime.yml");
-		Configuration config = new Configuration( file);
+		CompatConfig config = CompatConfigFactory.getConfig( file);
 		
 		// TODO: add entries from internal data
 		int i = 0;
