@@ -381,6 +381,10 @@ public class Rbuy extends JavaPlugin{
 	int defaultCommandsPerSecond = 50;
 	int commandsPerSecond = defaultCommandsPerSecond;
 	
+	
+	boolean defaultAllowMemberSell = false; // for compatibility
+	boolean allowMemberSell = defaultAllowMemberSell;
+	
 	/**
 	 * Permissions to ignore: allow by default.
 	 */
@@ -559,6 +563,7 @@ public class Rbuy extends JavaPlugin{
 		this.useBukkitPerms = config.getBoolean("use-bukkit-perms", defaultUseBukkitPerms);
 		this.useSigns = config.getBoolean("use-signs", defaultUseSigns);
 		this.useWgPerms = config.getBoolean("use-worldguard-perms", defaultUseWgPerms);
+		this.allowMemberSell = config.getBoolean("allow-member-sell", defaultAllowMemberSell);
 		// Some special defaults / checks:
 		if ( this.timeForgetTransaction<0 ) this.timeForgetTransaction = 0;
 		if ( this.timeCountBuy<0 ) this.timeCountBuy = this.timeForgetTransaction;
@@ -610,23 +615,23 @@ public class Rbuy extends JavaPlugin{
 		this.currentConfig = config;
 	}
 	
-	/**
-	 * Get a long value from a Configuration instance.
-	 * @param config
-	 * @param key
-	 * @param preset
-	 * @return
-	 */
-	public static Long getLong(CompatConfig config, String key, Long preset ){
-		String candidate = config.getString(key, null);
-		if ( candidate == null) return preset;
-		if ( !(candidate instanceof String) ) candidate = candidate.toString();
-		try{
-			return Long.parseLong(candidate);
-		} catch (NumberFormatException e){
-			return preset;
-		}
-	}
+//	/**
+//	 * Get a long value from a Configuration instance.
+//	 * @param config
+//	 * @param key
+//	 * @param preset
+//	 * @return
+//	 */
+//	public static Long getLong(CompatConfig config, String key, Long preset ){
+//		String candidate = config.getString(key, null);
+//		if ( candidate == null) return preset;
+//		if ( !(candidate instanceof String) ) candidate = candidate.toString();
+//		try{
+//			return Long.parseLong(candidate);
+//		} catch (NumberFormatException e){
+//			return preset;
+//		}
+//	}
 	
 	/**
 	 * Load all data into memory: offers, past transactions.
@@ -1395,13 +1400,17 @@ public class Rbuy extends JavaPlugin{
 	
 	/**
 	 * Exclusive owner, not member, no others.
+	 * if allowMemberSell is set members may be set.
 	 * @param playername
 	 * @param region
 	 * @return
 	 */
-	public static boolean isExclusiveOwner(String playername, ProtectedRegion region) {
-		DefaultDomain dom = region.getMembers();
-		if ( dom.size() != 0) return false;
+	public boolean isExclusiveOwner(String playername, ProtectedRegion region) {
+		DefaultDomain dom;
+		if ( !allowMemberSell){
+			dom = region.getMembers();
+			if ( dom.size() != 0) return false;
+		}
 		dom = region.getOwners();
 		if (dom.size() != 1) return false;
 		if (playername.equalsIgnoreCase(dom.toPlayersString())) return true;
@@ -1410,7 +1419,8 @@ public class Rbuy extends JavaPlugin{
 
 	/**
 	 * Check for ownership issues. 
-	 * Currently only exclusive ownership allows for 
+	 * Currently only exclusive ownership allows for //
+	 *  if allowMemberSell is set members may be set.
 	 * @param player
 	 * @param rgn
 	 * @return
@@ -1420,11 +1430,7 @@ public class Rbuy extends JavaPlugin{
 		ProtectedRegion region = getRegion(world, rgn);
 		if ( region == null ) return false;
 		if ( !region.hasMembersOrOwners() ){
-			if (!player.isOp()){
-				return false;
-			} else{
-				return hasPermission(player, "rbuy.sell-unowned");
-			}
+			return hasPermission(player, "rbuy.sell-unowned");
 		}
 		return isExclusiveOwner(player.getName(), region);
 	}
@@ -1635,6 +1641,15 @@ public class Rbuy extends JavaPlugin{
 			removeOffer(offer);
 			changed = true;
 			return false;
+		}
+		if (allowMemberSell){
+			DefaultDomain members = region.getMembers();
+			if ( members.size()>0){
+				if (!members.contains(getWorldGuard().wrapPlayer(player))){
+					send(player, "rbuy - The region can only be bought by members.");
+					return false;
+				}
+			}
 		}
 		long area =  getArea(region);
 		// check versus boundaries of info:

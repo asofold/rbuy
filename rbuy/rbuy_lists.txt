@@ -33,13 +33,17 @@ NOTES:
 	
 CHANGELOG:
 
-
-
-* (0.1.3)
 - ! cap-list conf entry: cap at such number of entries and write '... (xyz more)'
 - ? (internal) add META-INF folder with classpath entries. AT LEAST CHECK IF NECESSARY !
-- !add option to buy/sell a region exclusively with ONE member added (!) 
-- (internals) Added compat-layer for configuration.
+- ?(add) API for checking if a region is offered and if a region can be bought by a certain player.
+- ?(add) Colors ?
+- ?(add) notify option (toggle): notifies player on login about how many regions are for sale, and have been bought. [default=true, just player-list: deny-notify]
+- ?(add) config flag + permission for selling to members (might demand the seller to be online).
+
+(0.1.3)
+- (add) Allow selling to members (by config flag)
+- (bugfix) respects oppermissions for unowned regions now (ops would always have been able to sell those).
+- (internals) Added compatlayer 0.0.6 for configuration.
 
 
 
