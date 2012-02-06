@@ -22,18 +22,16 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event.Result;
-import org.bukkit.event.Event.Type;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerListener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -60,80 +58,10 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
  * @author mc_dev
  *
  */
-public class Rbuy extends JavaPlugin{
+public class Rbuy extends JavaPlugin implements Listener{
 	
 	// Classes: 
-	
-	/**
-	 * Delegates commands.
-	 * @author mc_dev
-	 *
-	 */
-	class RbuyCommand implements CommandExecutor{
-		Rbuy plugin;
-		public RbuyCommand(Rbuy plugin){
-			this.plugin = plugin;
-		}
-		@Override
-		public boolean onCommand(CommandSender sender, Command command,
-				String label, String[] args) {
-			return this.plugin.processCommand(sender, command, label, args);
-		}
 		
-	}
-	/**
-	 * Checking for sign interaction.
-	 * @author mc_dev
-	 *
-	 */
-	class RbuyPlayerListener extends PlayerListener{
-		Rbuy plugin;
-		public RbuyPlayerListener(Rbuy plugin){
-			this.plugin = plugin;
-		}
-		@Override
-		public void onPlayerInteract(PlayerInteractEvent event) {
-			if ( event.isCancelled() ) return;
-			if ( !useSigns) return;
-			Action action = event.getAction();
-			if ( action == Action.RIGHT_CLICK_BLOCK){
-				Block block = event.getClickedBlock();
-				Material mat = block.getType();
-				if ( (mat == Material.SIGN) || (mat == Material.SIGN_POST) || (mat == Material.WALL_SIGN)){
-					BlockState state = block.getState();
-					if ( state instanceof Sign){
-						if (plugin.processSignInteract(event.getPlayer(), (Sign) state)){
-							event.setCancelled(true);
-							event.setUseInteractedBlock(Result.DENY);
-							event.setUseItemInHand(Result.DENY);
-						}
-						
-					}
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Checking for placing/changing signs.
-	 * @author mc_dev
-	 *
-	 */
-	class RbuyBlockListener extends BlockListener{
-		Rbuy plugin;
-		public RbuyBlockListener(Rbuy plugin){
-			this.plugin = plugin;
-		}
-		@Override
-		public void onSignChange( SignChangeEvent event) {
-			if ( event.isCancelled()) return;
-			if ( !useSigns) return;
-			if (processSignChange(event)){
-				event.setCancelled(true);
-				removeSign(event.getBlock());
-			}
-		}
-	}
 	
 	/**
 	 * Represents an offer.
@@ -435,9 +363,6 @@ public class Rbuy extends JavaPlugin{
 	long tsCommand = 0;
 	int nCommands = 0;
 	
-	final RbuyPlayerListener playerListener = new RbuyPlayerListener(this);
-	final RbuyBlockListener blockListener = new RbuyBlockListener(this);
-	
 	@Override
 	public void onDisable() {
 		this.active = false;
@@ -469,18 +394,55 @@ public class Rbuy extends JavaPlugin{
 		this.reloadConfig();
 		this.loadData();
 
-		CommandExecutor exe = new RbuyCommand(this);
 		for (String n : this.cmds ){
 			PluginCommand cmd = this.getCommand(n);
-			cmd.setExecutor(exe);
+			cmd.setExecutor(this);
 		}
 		
 		// TODO: RuntimeConfig (data)
 		
 		PluginManager pm = getServer().getPluginManager();
-		pm.registerEvent(Type.PLAYER_INTERACT, playerListener	, Priority.Low, this);
-		pm.registerEvent(Type.SIGN_CHANGE, blockListener	, Priority.Low, this);
+		pm.registerEvents(this, this);
+		
 		System.out.println(this.getPluginDescr()+" is enabled (active="+this.active+").");
+	}
+	
+	@EventHandler(priority=EventPriority.LOW)
+	public void onPlayerInteract(PlayerInteractEvent event) {
+		if ( event.isCancelled() ) return;
+		if ( !useSigns) return;
+		Action action = event.getAction();
+		if ( action == Action.RIGHT_CLICK_BLOCK){
+			Block block = event.getClickedBlock();
+			Material mat = block.getType();
+			if ( (mat == Material.SIGN) || (mat == Material.SIGN_POST) || (mat == Material.WALL_SIGN)){
+				BlockState state = block.getState();
+				if ( state instanceof Sign){
+					if (processSignInteract(event.getPlayer(), (Sign) state)){
+						event.setCancelled(true);
+						event.setUseInteractedBlock(Result.DENY);
+						event.setUseItemInHand(Result.DENY);
+					}
+					
+				}
+			}
+		}
+	}
+
+	@EventHandler(priority=EventPriority.LOW)
+	public void onSignChange( SignChangeEvent event) {
+		if ( event.isCancelled()) return;
+		if ( !useSigns) return;
+		if (processSignChange(event)){
+			event.setCancelled(true);
+			removeSign(event.getBlock());
+		}
+	}
+	
+	@Override
+	public boolean onCommand(CommandSender sender, Command command,
+			String label, String[] args) {
+		return processCommand(sender, command, label, args);
 	}
 	
 	/**
