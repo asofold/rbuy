@@ -1,7 +1,6 @@
 package asofold.rbuy;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -973,8 +972,8 @@ public class Rbuy extends JavaPlugin implements Listener{
 				for ( Offer offer : removeThese){
 					setOwners(offer.worldName, offer.regionName, newOwners);
 				}
-				if ( allWorlds) saveRegions(null);
-				else saveRegions(worlds);
+				if ( allWorlds) saveRegions(null, sender);
+				else saveRegions(worlds, sender);
 			}
 			for ( Offer offer : removeThese){
 				this.removeOffer(offer);
@@ -1010,9 +1009,10 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * If null given: sdave all worlds.
 	 * 
 	 * @param worldNames
+	 * @param notify 
 	 * @return Number of successful saves (includes non existing worlds!).
 	 */
-	public static int saveRegions( Set<String> worldNames ){
+	public static int saveRegions( Set<String> worldNames, CommandSender notify ){
 		List<World> worlds = new LinkedList<World>();
 		int success = 0;
 		if ( worldNames== null){
@@ -1023,16 +1023,8 @@ public class Rbuy extends JavaPlugin implements Listener{
 				if ( world != null) worlds.add(world);
 			}
 		}
-		WorldGuardPlugin wg = getWorldGuard();
 		for (World world : worlds){
-			RegionManager man = wg.getRegionManager(world);
-			try {
-				man.save();
-				success++;
-			} catch (IOException e) {
-				Bukkit.getServer().getLogger().severe("rbuy - Failed to save regions for world: "+world.getName());
-				e.printStackTrace();
-			}
+			if (saveRegions(world, notify, null)) success++;
 		}
 		return success;
 	}
@@ -1666,16 +1658,36 @@ public class Rbuy extends JavaPlugin implements Listener{
 		return true;
 	}
 
+	/**
+	 * Saves regions for the world.
+	 * @param playerName
+	 * @param world
+	 * @param region
+	 */
 	public static void setExclusiveOwner(String playerName, World world, ProtectedRegion region) {
 		region.setMembers(new DefaultDomain());
 		DefaultDomain dom = new DefaultDomain();
 		dom.addPlayer(playerName);
 		region.setOwners(dom);
+		saveRegions(world, Bukkit.getServer().getPlayerExact(playerName), "set excl. owner for: "+region.getId());
+	}
+	
+	public static boolean saveRegions(World world, CommandSender notify, String desc){
 		try {
 			getWorldGuard().getRegionManager(world).save();
-		} catch (IOException e) {
-			Bukkit.getServer().getLogger().severe("rbuy - WorldGuard failed to save region "+region.getId()+" - check transactions.");
-			e.printStackTrace();
+			return true;
+		} catch (Throwable t) {
+			String extra;
+			if ( desc != null) extra = " ("+desc+")";
+			else extra = "";
+			String msg = "[rbuy] WorldGuard failed to save regions"+extra+", changes might get lost for world: "+world.getName();
+			Bukkit.getServer().getLogger().severe(msg);
+			t.printStackTrace();
+			if ( notify != null){
+				if (notify instanceof Player) notify.sendMessage(ChatColor.RED+"[rbuy] Failed to save changes, please contact an administrator !"); 
+				else notify.sendMessage(msg);
+			}
+			return false;
 		}
 	}
 

@@ -45,6 +45,10 @@ CHANGELOG:
 
 - !(add) Bean support !
 
+- !(add) configurable feature: change sign to "SOLD" on buy.
+
+(0.1.5)
+- (adjust) To WorldGuard 5.5 (RegionManager.save)
 
 (0.1.4)
 - (refactor) Switch to new Event system [removed warnings]
