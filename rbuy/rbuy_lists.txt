@@ -47,8 +47,11 @@ CHANGELOG:
 
 - !(add) configurable feature: change sign to "SOLD" on buy.
 
+(0.1.6)
+- (update) compatlayer 0.1.0
+
 (0.1.5)
-- (adjust) To WorldGuard 5.5 (RegionManager.save)
+- (adjust) To WorldGuard 5.5 (RegionManager.save: catch Throwable)
 
 (0.1.4)
 - (refactor) Switch to new Event system [removed warnings]
