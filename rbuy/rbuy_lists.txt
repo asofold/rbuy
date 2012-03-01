@@ -47,6 +47,15 @@ CHANGELOG:
 
 - !(add) configurable feature: change sign to "SOLD" on buy.
 
+
+*** Allow storing offers by containing region ! (efficiency !)
+
+
+- !(add) ignore-regions per world: not consider those on placing signs !
+
+(0.1.7)
+- (bugfix) Removed empty entires from plugin.yml .
+
 (0.1.6)
 - (update) compatlayer 0.1.0
 

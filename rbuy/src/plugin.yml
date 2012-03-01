@@ -1,6 +1,6 @@
 name: rbuy
 main: asofold.rbuy.Rbuy
-version: 0.1.6 beta
+version: 0.1.7 beta
 softdepend:
 - WorldGuard
 - WorldEdit
@@ -9,28 +9,19 @@ softdepend:
 commands:
   rbuy: 
      description: no descrition available
-     usage:
   rsell: 
      description: no descrition available
-     usage:
   rlist:
      description: no descrition available
-     usage:
   rinfo:
      description: no descrition available
-     usage:
   rreload:
      description: no descrition available
-     usage:
   rhelp:
      description: no descrition available
-     usage:
   rdisable:
      description: no descrition available
-     usage:
   renable:
      description: no descrition available
-     usage:
   rremove:
      description: no descrition available
-     usage:
