@@ -392,7 +392,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		this.name = pdf.getName();
 
 		// Errors in configuration should lead to deactivation of the plugin (intended).
-		this.reloadConfig();
+		this.reloadSettings();
 		this.loadData();
 
 		for (String n : this.cmds ){
@@ -456,7 +456,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		// TODO: save config ?
 	}
 
-	public CompatConfig getCurrentConfig(){
+	public CompatConfig getCurrentSettings(){
 		if ( this.currentConfig == null){
 			File file = new File(this.getDataFolder(), "rbuy.yml");
 			if ( file.exists() ){
@@ -464,17 +464,17 @@ public class Rbuy extends JavaPlugin implements Listener{
 				config.load();
 				this.currentConfig = config;
 			} else{
-				this.setDefaultConfig();
+				this.setDefaultSettings();
 			}
-			this.applyConfig();
+			this.applySettings();
 		}
 		return this.currentConfig;
 	}
 	
-	public void reloadConfig(){
+	public void reloadSettings(){
 		this.currentConfig = null;
-		this.getCurrentConfig();
-		this.applyConfig();
+		this.getCurrentSettings();
+		this.applySettings();
 	}
 	
 	public static List<String> stringList(String[] preset){
@@ -488,7 +488,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		return stringList( new String[]{preset});
 	}
 
-	public void applyConfig() {
+	public void applySettings() {
 		// apply this.currentConfig to internals
 		CompatConfig config = this.currentConfig;
 		if (config.getString("users-buy", null) != null ) {
@@ -541,7 +541,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * Set the defualt configuration and save it.
 	 * applyConfig has to be called (!) for the changes to take effect.
 	 */
-	public void setDefaultConfig() {
+	public void setDefaultSettings() {
 		// create and safe default configuration.
 		File file = new File(this.getDataFolder(), "rbuy.yml");
 		CompatConfig config = CompatConfigFactory.getConfig(file);
@@ -837,7 +837,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 				return false;
 			}
 			this.saveData(); // TODO: rethink this - maybe if (this.changed) ...
-			this.reloadConfig();
+			this.reloadSettings();
 			this.loadData();
 			send( sender, "rbuy - Reloaded configuration.");
 			return true;		

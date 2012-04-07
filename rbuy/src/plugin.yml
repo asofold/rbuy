@@ -4,7 +4,6 @@ version: 0.2.0 beta
 softdepend:
 - WorldGuard
 - WorldEdit
-- admittance
 
 commands:
   rbuy: 

@@ -55,7 +55,7 @@ CHANGELOG:
 
 (0.2.0)
 - (refactor) Add economy mixin to not depend on admittance anymore.
-
+- (refactor) renamed some methods.
 
 (0.1.7)
 - (bugfix) Removed empty entires from plugin.yml .
