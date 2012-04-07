@@ -382,6 +382,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		magicWordsBuy.add(defaultMagicWordBuy);
 		magicWordsSell.clear();
 		magicWordsSell.add(defaultMagicWordSell);
+		ecoMixin.tag = "[rbuy]";
 	}
 
 	@Override
