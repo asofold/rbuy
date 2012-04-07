@@ -143,7 +143,6 @@ SCHEDULE:
 - ! also forget transactions on save ? (not only on loading).
 - ! restricting number of commands per second per player(!)
 - ! rhelp text !
-- !! MAKE 100% SURE HOW TO SET / CHANGE WG-REGIONS !! grm.preload?
 - !  ? only cuboid 
 - ? bukkit : default config ?
 - ? /rplace to place an offer for someone else (also an anonymous or special acount ?)
@@ -152,7 +151,6 @@ SCHEDULE:
 - ! command based inspection methods for listing area/volume, transactions, whatever for players + manipulation.
 - ! flat file strategy -> less space, faster ? separate offers, transactions files, world specific ?
 - ! custom language
-- ? WorldGuard/worldName: ensure that the functionality is restricted to having the player and regions be in the same world, except for /rsell, probably
 - ! op commands for administraction (removing offers, transactions, all/for players, consistency checking etc., create backups..... (? for some: use with * before region name to avoid hundreds of commands ?)
 - ! ingame configuration changes 
 - ? sorted regions: sort offers.keySet!, keep sorted list in memory, till change.
