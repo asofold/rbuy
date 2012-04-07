@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.Configuration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -20,6 +19,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
+import asofold.rbuy.compatlayer.CompatConfig;
 import asofold.rbuy.mixin.MixinPublicInterface;
 import asofold.rbuy.mixin.economy.impl.BOSEConomy;
 import asofold.rbuy.mixin.economy.impl.Essentials257;
@@ -130,9 +130,9 @@ public class EconomyMixin implements Listener {
 	
 	
 	
-	public void applySettings(Configuration cfg, String path){
-		pluginFilter = new StringPropertyFilter(cfg.getStringList(path+".include-plugins"), cfg.getStringList(path+".exclude-plugins"));
-		List<String> load = cfg.getStringList(path+".load-plugins");
+	public void applySettings(CompatConfig cfg, String path){
+		pluginFilter = new StringPropertyFilter(cfg.getStringList(path+".include-plugins", null), cfg.getStringList(path+".exclude-plugins", null));
+		List<String> load = cfg.getStringList(path+".load-plugins", null);
 		if ( load != null){
 			PluginManager pm = Bukkit.getPluginManager();
 			for (String n : load){
@@ -151,12 +151,12 @@ public class EconomyMixin implements Listener {
 		initCompatibleEconomyInterface();
 	}
 	
-	public void addDefaultSettings(Configuration cfg, String path){
+	public void addDefaultSettings(CompatConfig cfg, String path){
 		List<String> exc = new LinkedList<String>();
 		exc.add("PluginLibSharedLibrary");
-		cfg.set(path+".exclude-plugins", exc);
-		cfg.set(path+".include-plugins", new LinkedList<String>());
-		cfg.set(path+".load-plugins", new LinkedList<String>());
+		cfg.setProperty(path+".exclude-plugins", exc);
+		cfg.setProperty(path+".include-plugins", new LinkedList<String>());
+		cfg.setProperty(path+".load-plugins", new LinkedList<String>());
 		// TODO: currency aliases !
 	}
 	
