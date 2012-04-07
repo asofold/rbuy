@@ -540,6 +540,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		if ( this.timeCountVolume<0) this.timeCountVolume = this.timeCountArea;
 		if (this.magicWordsBuy.isEmpty()) this.magicWordsBuy.add(this.defaultMagicWordBuy);
 		if (this.magicWordsSell.isEmpty()) this.magicWordsSell.add(this.defaultMagicWordSell);
+		ecoMixin.applySettings(config, "economy");
 	}
 	
 	/**
@@ -577,7 +578,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		config.setProperty("use-bukkit-perms", defaultUseBukkitPerms);
 		config.setProperty("use-signs", defaultUseSigns);
 		config.setProperty("use-worldguard-perms", defaultUseWgPerms);
-		
+		ecoMixin.addDefaultSettings(config, "economy");
 		if ( !config.save()){
 			getServer().getLogger().severe("Rbuy - failed to save default configuration.");
 		}
