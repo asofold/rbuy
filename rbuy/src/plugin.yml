@@ -1,6 +1,6 @@
 name: rbuy
 main: asofold.rbuy.Rbuy
-version: 0.1.7 beta
+version: 0.2.0 beta
 softdepend:
 - WorldGuard
 - WorldEdit
