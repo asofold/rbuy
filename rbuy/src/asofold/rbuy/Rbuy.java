@@ -39,6 +39,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import asofold.rbuy.compatlayer.CompatConfig;
 import asofold.rbuy.compatlayer.CompatConfigFactory;
+import asofold.rbuy.mixin.economy.EconomyMixin;
+import asofold.rbuy.mixin.economy.MixinEconomyInterface;
 
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -362,6 +364,11 @@ public class Rbuy extends JavaPlugin implements Listener{
 	long tsCommand = 0;
 	int nCommands = 0;
 	
+	/**
+	 * Economy support!
+	 */
+	EconomyMixin ecoMixin = new EconomyMixin();
+	
 	@Override
 	public void onDisable() {
 		this.active = false;
@@ -402,6 +409,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvents(this, this);
+		ecoMixin.registerEvents(this);
 		
 		System.out.println(this.getPluginDescr()+" is enabled (active="+this.active+").");
 	}
@@ -1224,7 +1232,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @return
 	 */
 	boolean processOffer(Player player, String[] args) {
-		asofold.admittance.interfaces.EconomyInterface eco = getAdmittanceEconomyInterface();
+		MixinEconomyInterface eco = ecoMixin.getEconomyInterface();
 		String currency = eco.getDefaultCurrency();
 		if ( args.length == 3){
 			currency = args[2].trim().toLowerCase();
@@ -1329,11 +1337,11 @@ public class Rbuy extends JavaPlugin implements Listener{
 
 	/**
 	 * Getting the economy-interface.
+	 * @return 
 	 * @return
 	 */
-	public static asofold.admittance.interfaces.EconomyInterface getAdmittanceEconomyInterface(){
-		Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin("admittance");
-		return ((asofold.admittance.Admittance) plugin).getEconomyInterface();
+	public EconomyMixin getEconomyMixin(){
+		return ecoMixin;
 	}
 	
 	/**
@@ -1630,7 +1638,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 			send(player, "rbuy - You are too far from the region to buy it, you must be within "+this.distanceBuy+" blocks of it.");
 			return false;
 		}
-		if (getAdmittanceEconomyInterface().transfer(player, benefits, offer.amount, offer.currency)){
+		if (ecoMixin.getEconomyInterface().transfer(player, benefits, offer.amount, offer.currency)){
 			setExclusiveOwner(playerName, world,  region);
 			removeOffer(offer);
 			Transaction ta = new Transaction();
@@ -2010,9 +2018,9 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @param currency
 	 * @return
 	 */
-	public static String getCurrency(String currency){
+	public String getCurrency(String currency){
 		if ( currency == null ) {
-			currency = getAdmittanceEconomyInterface().getDefaultCurrency();
+			currency = ecoMixin.getEconomyInterface().getDefaultCurrency();
 			if ( currency == null ) currency = "";
 		}
 		return currency;

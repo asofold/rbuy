@@ -53,6 +53,10 @@ CHANGELOG:
 
 - !(add) ignore-regions per world: not consider those on placing signs !
 
+(0.2.0)
+- (refactor) Add economy mixin to not depend on admittance anymore.
+
+
 (0.1.7)
 - (bugfix) Removed empty entires from plugin.yml .
 
