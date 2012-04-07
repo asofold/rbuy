@@ -266,12 +266,6 @@ public class Rbuy extends JavaPlugin implements Listener{
 	int defaultMinMapHeight = 0;
 	int minMapHeight = defaultMinMapHeight;
 	
-	/**
-	 * Strict boundary
-	 */
-	int defaultMaxMapHeight = 127;
-	int maxMapHeight = defaultMaxMapHeight;
-	
 	/*
 	 * Only list offers from the same world on /rlist.
 	 */
@@ -516,7 +510,6 @@ public class Rbuy extends JavaPlugin implements Listener{
 		this.magicWordsSell.addAll(config.getStringList("magicwords-sell", stringList(defaultMagicWordSell)));
 		this.maxArea = config.getLong("max-area", defaultMaxArea);
 		this.maxBuy = config.getInt("max-buy",  defaultMaxBuy);
-		this.maxMapHeight = config.getInt("max-map-height", defaultMaxMapHeight);
 		this.maxOffers = config.getInt("max-offers", defaultMaxOffers);
 		this.maxVolume = config.getLong("max-volume", defaultMaxVolume);
 		this.minMapHeight = config.getInt("min-map-height", defaultMinMapHeight);
@@ -562,7 +555,6 @@ public class Rbuy extends JavaPlugin implements Listener{
 		config.setProperty("magicwords-sell", stringList(defaultMagicWordSell));
 		config.setProperty("max-area", defaultMaxArea);
 		config.setProperty("max-buy", defaultMaxBuy);
-		config.setProperty("max-map-height", defaultMaxMapHeight);
 		config.setProperty("max-offers", defaultMaxOffers);
 		config.setProperty("min-map-height", defaultMinMapHeight);
 		config.setProperty("max-volume", defaultMaxVolume);
