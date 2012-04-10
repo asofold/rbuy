@@ -24,8 +24,8 @@ import asofold.rbuy.mixin.util.MixinUtil;
  */
 public abstract class SimpleEconomy implements MixinEconomyInterface {
 
-	String defaultCurrency = null;
-	Set<String> acceptedCurrencies = new HashSet<String>();
+	protected String defaultCurrency = null;
+	protected Set<String> acceptedCurrencies = new HashSet<String>();
  	
 	/**
 	 * Send message to receiver of money.
