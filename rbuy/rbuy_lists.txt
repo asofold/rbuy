@@ -53,6 +53,8 @@ CHANGELOG:
 
 - !(add) ignore-regions per world: not consider those on placing signs !
 
+- !(add) ? Performance improvements ?
+
 (0.2.0)
 - (refactor) Add economy mixin to not depend on admittance anymore.
 - (refactor) renamed some methods.
