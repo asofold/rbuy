@@ -1907,7 +1907,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		}
 		String secondLine = lines[1].trim().toLowerCase();
 		Location loc = event.getBlock().getLocation();
-		if (secondLine.equals("")){
+		if (secondLine.equals("") || secondLine.endsWith("*")){
 			// Attempt to find the region associated with it.
 			List<ProtectedRegion> regions = getSellableRegions(player, loc);
 			if (secondLine.endsWith("*")){
