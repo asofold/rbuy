@@ -55,6 +55,12 @@ CHANGELOG:
 
 - !(add) ? Performance improvements ?
 
+- !(add) Permissions for different settings ? [sell etc.]
+
+
+(0.3.0)
+- (adjust) Change visibility of inner classes.
+
 (0.2.0)
 - (refactor) Add economy mixin to not depend on admittance anymore.
 - (refactor) renamed some methods.

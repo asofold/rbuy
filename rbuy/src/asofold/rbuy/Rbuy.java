@@ -69,7 +69,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @author mc_dev
 	 *
 	 */
-	public class Offer{
+	public static final class Offer{
 		/**
 		 * Name of the player who gets the money.
 		 */
@@ -106,7 +106,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		}
 	}
 	
-	class Transaction{
+	public static final class Transaction{
 		public String regionName = null;
 		public String buyerName = null;
 		public String sellerName = null;
@@ -154,7 +154,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @author mc_dev
 	 *
 	 */
-	class PlayerInfo{
+	public static final class PlayerInfo{
 		public String playerName = null;
 		public Collection<Transaction> transactions = new LinkedList<Transaction>();
 		public Collection<Offer> offers = new LinkedList<Offer>();
