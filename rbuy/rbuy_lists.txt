@@ -57,7 +57,6 @@ CHANGELOG:
 
 - !(add) Permissions for different settings ? [sell etc.]
 
-
 (0.3.0)
 - (add) Allow a region name prefix on signs with <prefix>*
 - (adjust) Change visibility of inner classes.

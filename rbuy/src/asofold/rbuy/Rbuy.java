@@ -1799,7 +1799,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @param lines
 	 * @return If the sign contains /rbuy syntax (even if wrong).
 	 */
-	boolean processSignInteract(Player player, Sign sign) {
+	public boolean processSignInteract(Player player, Sign sign) {
 		// TODO: change signature
 		String[] lines = sign.getLines();
 		if ( lines == null ) return false;
