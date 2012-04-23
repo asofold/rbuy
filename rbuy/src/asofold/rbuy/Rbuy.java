@@ -1910,10 +1910,19 @@ public class Rbuy extends JavaPlugin implements Listener{
 		if (secondLine.equals("")){
 			// Attempt to find the region associated with it.
 			List<ProtectedRegion> regions = getSellableRegions(player, loc);
+			if (secondLine.endsWith("*")){
+				secondLine = secondLine.substring(0, secondLine.length()-1);
+				List<ProtectedRegion> rem = new LinkedList<ProtectedRegion>();
+				for (ProtectedRegion r : regions){
+					if (!r.getId().toLowerCase().startsWith(secondLine)) rem.add(r);
+				}
+				regions.removeAll(rem);
+			}
 			if ( regions.size() == 0 ){
 				send(player, "rbuy - There is no sellable region at the given position.");
 				return true;
-			} else if ( regions.size() == 1 ){
+			} 
+			else if ( regions.size() == 1 ){
 				secondLine = regions.get(0).getId();
 				if ( secondLine.length()>15){
 					send(player, "rbuy - The region name is too long to fit on a sign: "+secondLine);
@@ -1922,7 +1931,8 @@ public class Rbuy extends JavaPlugin implements Listener{
 				setLines = true;
 				lines[1] = secondLine;
 				secondLine = secondLine.toLowerCase(); // hmm
-			} else{
+			} 
+			else{
 				String names = "";
 				// TODO: (maybe) feature: disregard regions that are already for sale ?
 				for ( ProtectedRegion r : regions){

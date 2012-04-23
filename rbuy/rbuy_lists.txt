@@ -59,6 +59,7 @@ CHANGELOG:
 
 
 (0.3.0)
+- (add) Allow a region name prefix on signs with <prefix>*
 - (adjust) Change visibility of inner classes.
 
 (0.2.0)
