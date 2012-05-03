@@ -1,6 +1,6 @@
 name: rbuy
 main: asofold.rbuy.Rbuy
-version: 0.3.0 beta
+version: 0.4.0 beta
 softdepend:
 - WorldGuard
 - WorldEdit
@@ -24,3 +24,6 @@ commands:
      description: no descrition available
   rremove:
      description: no descrition available
+  runsellable:
+     description: Toggle if a region is unsellable.
+     usage: 'Player: /runsellable <rid> OR Player+Console: /runsellable <world> <rid>'

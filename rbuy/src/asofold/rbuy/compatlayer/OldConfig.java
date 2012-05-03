@@ -23,4 +23,5 @@ public class OldConfig extends AbstractOldConfig{
 		// TODO: maybe check for sub nodes ? ... CHECK IT!
 		return all;
 	}
+
 }

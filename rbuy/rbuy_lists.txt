@@ -59,13 +59,16 @@ CHANGELOG:
 
 - ?(add) command feature : confirm actions (+ignore flag for that)
 ?(add) Something for easier selling of overlapping regions ?
+!(adjust) rework internals such as to allow for naming a prefix in /rsell command as well.
+
+***
+?(add) Left click info for buy signs (every second max, show if valid + real region name and size of region)
+?(add) Allow abbreviation ids for buy signs (integrate with left click info)
 
 
 (0.4.0)
-?(add) Left click info for buy signs (every second max, show if valid + real region name and size of region)
-?(add) Allow abbreviation ids for buy signs (integrate with left click info) 
-
-!(add) unsellable list + command to set those (runsellable [world] region1 region2.... + auto remove offers) (extra file !)
+(add) unsellable list + command to set those (runsellable [world] region1 region2.... + auto remove offers) (extra file !)
+(update) compatlayer.
 
 
 (0.3.0)

@@ -43,7 +43,6 @@ public class NewConfig extends AbstractNewConfig{
 	public Map<String, Object> getValuesDeep() {
 		return config.getValues(true);
 	}
-	
-	
+
 	
 }

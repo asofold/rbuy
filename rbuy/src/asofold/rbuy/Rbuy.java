@@ -359,6 +359,11 @@ public class Rbuy extends JavaPlugin implements Listener{
 	int nCommands = 0;
 	
 	/**
+	 * Unsellable regions.
+	 */
+	Map<String, Set<String>> unsellable = new HashMap<String, Set<String>>();
+	
+	/**
 	 * Economy support!
 	 */
 	EconomyMixin ecoMixin = new EconomyMixin();
@@ -604,6 +609,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		this.transactions.clear();
 		this.infos.clear();
 		this.changed = false;
+		loadUnsellable();
 		File file = new File( getDataFolder(), "runtime.yml");
 		if ( !file.exists() ) return;
 		CompatConfig config = CompatConfigFactory.getConfig( file);
@@ -651,7 +657,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		}
 		System.out.println("rbuy - load data: "+nOffers +" offers, "+transactions.size()+" transactions.");
 	}
-	
+
 	/**
 	 * Save data from memory to file.
 	 */
@@ -866,12 +872,113 @@ public class Rbuy extends JavaPlugin implements Listener{
 			boolean res = processRemove(sender, args);
 			if ( this.changed ) this.saveData(); 
 			return res;
+		} else if (label.equalsIgnoreCase("runsellable")){
+			String world;
+			String rid;
+			if (args.length == 1){
+				if (!(sender instanceof Player)) return false;
+				world = ((Player) sender).getWorld().getName();
+				rid = args[0];
+			}
+			else if (args.length == 2){
+				world = args[0];
+				rid = args[1];
+			}
+			else return false;
+			// permission checks are done inside of the method:
+			processUnsellable(sender, world, rid);
+			return true;
 		}
 		
 		send(sender, "rbuy - unknown options/command: "+label);
 		return false;
 	}
 	
+	public void processUnsellable(CommandSender sender, String worldName,
+			String rid) {
+		worldName = worldName.trim().toLowerCase();
+		World world = getServer().getWorld(worldName);
+		if (world == null){
+			sender.sendMessage(ChatColor.DARK_RED+"[rbuy] World does not exist: "+worldName);
+			return;
+		}
+		rid = rid.trim().toLowerCase();
+		ProtectedRegion region = getRegion(world, rid);
+		if (region == null){
+			sender.sendMessage(ChatColor.DARK_RED+"[rbuy] Region does not exist (world: "+worldName+"): "+rid);
+			return;
+		}
+		if (!hasPermission(sender, "rbuy.unsellable.set")){
+			boolean hasPerm = false;
+			if (sender instanceof Player){
+				if (region.isOwner(((Player) sender).getName())){
+					if (hasPermission(sender, "rbuy.unsellable.set.region.own")) hasPerm = true;
+				}
+			}
+			if (!hasPerm){
+				sender.sendMessage(ChatColor.DARK_RED+"[rbuy] You don't have permission.");
+				return;
+			}
+		}
+		// (permission given)
+		sender.sendMessage("The region "+region.getId()+" ("+world.getName()+") is now: "+((toggleUnsellable(worldName, rid))?(ChatColor.RED+"unsellable"):(ChatColor.YELLOW+"sellable")));
+	}
+
+	/**
+	 * Return if now unsellable.
+	 * @param worldName
+	 * @param rid
+	 * @return
+	 */
+	public boolean toggleUnsellable(String worldName, String rid) {
+		worldName = worldName.trim().toLowerCase();
+		rid = rid.trim().toLowerCase();
+		Set<String> rids = unsellable.get(worldName);
+		final boolean res;
+		if (rids == null){
+			rids = new HashSet<String>();
+			rids.add(rid);
+			unsellable.put(worldName, rids);
+			res = true;
+		}
+		else{
+			res = !rids.remove(rid);
+			if (res) rids.add(rid); // to be added.
+		}
+		saveUnsellable();
+		return res;
+	}
+	
+	public File getUnsellableFile(){
+		return new File(getDataFolder(), "unsellable.yml");
+	}
+	
+	private void saveUnsellable() {
+		CompatConfig cfg = CompatConfigFactory.getConfig(getUnsellableFile());
+		for (String w : unsellable.keySet() ){
+			Set<String> rids = unsellable.get(w);
+			if (rids == null || rids.isEmpty()) continue;
+			List<String> all = new LinkedList<String>(rids);
+			cfg.set(w, all);
+		}
+		cfg.save();
+	}
+
+	private void loadUnsellable() {
+		unsellable.clear();
+		CompatConfig cfg = CompatConfigFactory.getConfig(getUnsellableFile());
+		cfg.load();
+		for (String w : cfg.getStringKeys()){
+			List<String> rids = cfg.getStringList(w, null);
+			if (rids == null || rids.isEmpty()) continue;
+			Set<String> uns = new HashSet<String>();
+			for (String rid : rids){
+				uns.add(rid.trim().toLowerCase());
+			}
+			unsellable.put(w.trim().toLowerCase(), uns);
+		}
+	}
+
 	/**
 	 * Remove offers for players, worlds, regions.
 	 * Args will have prefixes like 'w:', 'p:' or 'r:',
@@ -1240,6 +1347,10 @@ public class Rbuy extends JavaPlugin implements Listener{
 			send(player, "rbuy - The region '__global__' can not be sold.");
 			return false;
 		}
+		if (isUnsellable(player.getWorld().getName(), rgn)){
+			send(player, ChatColor.DARK_RED+"[rbuy] This region is unsellable.");
+			return false;
+		}
 		double amount = -1;
 		try{
 			amount = Double.parseDouble(args[1]);
@@ -1383,6 +1494,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 */
 	boolean canSellRegion( Player player, String rgn){
 		World world = player.getWorld();
+		if (isUnsellable(world.getName(), rgn)) return false;
 		ProtectedRegion region = getRegion(world, rgn);
 		if ( region == null ) return false;
 		if ( !region.hasMembersOrOwners() ){
@@ -1552,6 +1664,12 @@ public class Rbuy extends JavaPlugin implements Listener{
 		}
 		return out;
 	}
+	
+	public boolean isUnsellable(String worldName, String rid){
+		Set<String>  rids = unsellable.get(worldName.trim().toLowerCase());
+		if (rids == null) return false;
+		return rids.contains(rid.trim().toLowerCase());
+	}
 
 	boolean processBuy(Player player, String regionName) {
 		long ts = System.currentTimeMillis();
@@ -1560,6 +1678,11 @@ public class Rbuy extends JavaPlugin implements Listener{
 		Offer offer = getOffer(regionName, world.getName());
 		if ( offer == null ){
 			send(player, "rbuy - In this world there is no offer for: "+regionName);
+			return false;
+		}
+		if (isUnsellable(offer.worldName, offer.regionName)){
+			send(player, ChatColor.DARK_RED+"[rbuy] This region is unsellable.");
+			removeOffer(offer);
 			return false;
 		}
 		String playerName = player.getName();
@@ -2038,10 +2161,13 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 */
 	public List<ProtectedRegion> getSellableRegions( Player player, Location loc){
 		boolean sellUnowned = hasPermission(player, "rbuy.sell-unowned");
-		ApplicableRegionSet set = getWorldGuard().getRegionManager(loc.getWorld()).getApplicableRegions(loc);
+		World world = loc.getWorld();
+		Set<String> rids = unsellable.get(world.getName().toLowerCase());
+		ApplicableRegionSet set = getWorldGuard().getRegionManager(world).getApplicableRegions(loc);
 		List<ProtectedRegion> candidates = new LinkedList<ProtectedRegion>();
 		String playerName = player.getName();
 		for (ProtectedRegion region : set){
+			if (rids != null && rids.contains(region.getId().toLowerCase())) continue;
 			if ( sellUnowned && !region.hasMembersOrOwners()){
 				candidates.add(region);
 			} else if (isExclusiveOwner(playerName, region)){
