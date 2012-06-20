@@ -65,6 +65,13 @@ CHANGELOG:
 ?(add) Left click info for buy signs (every second max, show if valid + real region name and size of region)
 ?(add) Allow abbreviation ids for buy signs (integrate with left click info)
 
+? (add) Limit for number of regions ? [how efficiently ?]
+! (add) API: events for buying, selling pre + done
+
+
+! (add) API for names (assumeHasPermission)!
+
+!(add) Logging of region ownership change (!)
 
 (0.4.0)
 (add) unsellable list + command to set those (runsellable [world] region1 region2.... + auto remove offers) (extra file !)
