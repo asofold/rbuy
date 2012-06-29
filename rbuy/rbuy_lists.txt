@@ -73,6 +73,9 @@ CHANGELOG:
 
 !(add) Logging of region ownership change (!)
 
+(0.4.1)
+- (update) config: compatlayer
+
 (0.4.0)
 (add) unsellable list + command to set those (runsellable [world] region1 region2.... + auto remove offers) (extra file !)
 (update) compatlayer.
