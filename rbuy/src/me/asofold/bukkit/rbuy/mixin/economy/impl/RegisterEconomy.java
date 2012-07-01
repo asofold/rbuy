@@ -1,8 +1,9 @@
-package asofold.rbuy.mixin.economy.impl;
+package me.asofold.bukkit.rbuy.mixin.economy.impl;
+
+import me.asofold.bukkit.rbuy.mixin.economy.MixinEconomyInterface;
 
 import org.bukkit.entity.Player;
 
-import asofold.rbuy.mixin.economy.MixinEconomyInterface;
 
 /**
  * TODO: use Register to hook into economies. 

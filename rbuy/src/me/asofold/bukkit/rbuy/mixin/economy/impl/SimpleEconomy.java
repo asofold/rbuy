@@ -1,15 +1,16 @@
-package asofold.rbuy.mixin.economy.impl;
+package me.asofold.bukkit.rbuy.mixin.economy.impl;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import me.asofold.bukkit.rbuy.mixin.economy.EconomyMixin;
+import me.asofold.bukkit.rbuy.mixin.economy.MixinEconomyInterface;
+import me.asofold.bukkit.rbuy.mixin.util.MixinUtil;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import asofold.rbuy.mixin.economy.EconomyMixin;
-import asofold.rbuy.mixin.economy.MixinEconomyInterface;
-import asofold.rbuy.mixin.util.MixinUtil;
 
 /**
  * Auxiliary methods + full payment structure based on methods add and subtract.

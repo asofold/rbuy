@@ -1,4 +1,4 @@
-package asofold.rbuy.mixin;
+package me.asofold.bukkit.rbuy.mixin;
 
 /**
  * Basic properties about interfaces to identify them.

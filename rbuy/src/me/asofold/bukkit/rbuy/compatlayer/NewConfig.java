@@ -1,4 +1,4 @@
-package asofold.rbuy.compatlayer;
+package me.asofold.bukkit.rbuy.compatlayer;
 
 import java.io.File;
 import java.util.Map;

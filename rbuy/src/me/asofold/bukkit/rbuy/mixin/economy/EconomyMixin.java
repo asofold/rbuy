@@ -1,13 +1,25 @@
 /**
  * Package for copy and paste for simply hooking into economies.
  */
-package asofold.rbuy.mixin.economy;
+package me.asofold.bukkit.rbuy.mixin.economy;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import me.asofold.bukkit.rbuy.compatlayer.CompatConfig;
+import me.asofold.bukkit.rbuy.mixin.MixinPublicInterface;
+import me.asofold.bukkit.rbuy.mixin.economy.impl.BOSEConomy;
+import me.asofold.bukkit.rbuy.mixin.economy.impl.Essentials257;
+import me.asofold.bukkit.rbuy.mixin.economy.impl.IConomy5;
+import me.asofold.bukkit.rbuy.mixin.economy.impl.IConomy6;
+import me.asofold.bukkit.rbuy.mixin.economy.impl.MultiCurrency;
+import me.asofold.bukkit.rbuy.mixin.economy.impl.PluginLibEconomy;
+import me.asofold.bukkit.rbuy.mixin.economy.impl.SimpleEconomy;
+import me.asofold.bukkit.rbuy.mixin.economy.impl.VaultEconomy;
+import me.asofold.bukkit.rbuy.mixin.util.StringPropertyFilter;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -19,17 +31,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
-import asofold.rbuy.compatlayer.CompatConfig;
-import asofold.rbuy.mixin.MixinPublicInterface;
-import asofold.rbuy.mixin.economy.impl.BOSEConomy;
-import asofold.rbuy.mixin.economy.impl.Essentials257;
-import asofold.rbuy.mixin.economy.impl.IConomy5;
-import asofold.rbuy.mixin.economy.impl.IConomy6;
-import asofold.rbuy.mixin.economy.impl.MultiCurrency;
-import asofold.rbuy.mixin.economy.impl.PluginLibEconomy;
-import asofold.rbuy.mixin.economy.impl.SimpleEconomy;
-import asofold.rbuy.mixin.economy.impl.VaultEconomy;
-import asofold.rbuy.mixin.util.StringPropertyFilter;
 
 /**
  * "Mixin" class to hook into economies in a simple way.

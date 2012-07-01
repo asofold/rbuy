@@ -73,6 +73,10 @@ CHANGELOG:
 
 !(add) Logging of region ownership change (!)
 
+
+(1.0.0)
+- (CHANGE) Packet structure.
+
 (0.4.1)
 - (update) config: compatlayer
 

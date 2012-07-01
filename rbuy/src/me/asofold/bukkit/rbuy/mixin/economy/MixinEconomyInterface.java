@@ -1,8 +1,9 @@
-package asofold.rbuy.mixin.economy;
+package me.asofold.bukkit.rbuy.mixin.economy;
+
+import me.asofold.bukkit.rbuy.mixin.MixinPublicInterface;
 
 import org.bukkit.entity.Player;
 
-import asofold.rbuy.mixin.MixinPublicInterface;
 
 /**
  * Intended for "consumer perspective" money transfer for one online player and one potentially offline player.

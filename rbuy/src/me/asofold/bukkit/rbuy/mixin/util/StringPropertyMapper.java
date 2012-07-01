@@ -1,4 +1,4 @@
-package asofold.rbuy.mixin.util;
+package me.asofold.bukkit.rbuy.mixin.util;
 
 import java.util.Collection;
 import java.util.LinkedList;
