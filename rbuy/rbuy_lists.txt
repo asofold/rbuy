@@ -76,6 +76,7 @@ CHANGELOG:
 
 (1.0.0)
 - (CHANGE) Packet structure.
+- (adjust) plshared
 
 (0.4.1)
 - (update) config: compatlayer

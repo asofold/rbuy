@@ -337,7 +337,7 @@ public class EconomyMixin implements Listener {
 		if (plugin == null ) plugin = this.getEnabledPlugin("PluginLib");
     	if (plugin == null ) {
     		try {
-    			String dummy = asofold.pluginlib.shared.Shared.getName() + "("+asofold.pluginlib.shared.Shared.getVersion()+")";
+    			String dummy = me.asofold.bukkit.plshared.Shared.getName() + "("+me.asofold.bukkit.plshared.Shared.getVersion()+")";
     			System.out.println("admittance - found "+dummy+" as non-plugin library.");
     		} catch(Throwable t){
     			return false;
