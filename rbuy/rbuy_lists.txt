@@ -82,7 +82,10 @@ VERSION HISTORY
 ---------------------------------------------------------------------------------
 
 (1.1.0)
-- (add) Change sign text for invalid offers.
+- (add) Change sign text for invalid offers and bought regions.
+- (bugfix) Showing the offer is valid only when its really valid.
+- (adjust) Visibility of most methods to public, to allow better "moderate" API use.
+- (bugfix) Wrong return value if transaction fails on buying.
 
 (1.0.0)
 - (CHANGE) Packet structure.

@@ -993,7 +993,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @param args
 	 * @return
 	 */
-	boolean processRemove(CommandSender sender, String[] args) {
+	public boolean processRemove(CommandSender sender, String[] args) {
 		if ( args.length == 0 ){
 			send(sender, "rbuy - Expect a specification what to remove (Arguments can be: p:<player> or p:* for players, r:<region> or r:* or r:<prefix>* for regions, w:<world> or w:* or w:<prefix>* for worlds).");
 			return false;
@@ -1202,7 +1202,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * Show all detaild infos, for console only.
 	 * @param sender
 	 */
-	void showAllInfos(CommandSender sender) {
+	public void showAllInfos(CommandSender sender) {
 		String own = "";
 		boolean restrict = !showOwn && (sender instanceof Player);
 		if (restrict) own = sender.getName();
@@ -1227,7 +1227,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @param sender
 	 * @param rgn
 	 */
-	void showInfo(CommandSender sender, String rgn, String worldName) {
+	public void showInfo(CommandSender sender, String rgn, String worldName) {
 		String rn = rgn.trim().toLowerCase();
 		Offer offer = getOffer(rn, worldName);
 		if (offer != null){
@@ -1237,7 +1237,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		}
 	}
 	
-	void showInfo(CommandSender sender, String rgn){
+	public void showInfo(CommandSender sender, String rgn){
 		boolean found = false;
 		for ( String wn : this.offers.keySet()){
 			Offer offer = this.getOffer(rgn,  wn);
@@ -1249,12 +1249,13 @@ public class Rbuy extends JavaPlugin implements Listener{
 		if ( !found) send(sender, "rbuy - No offers found for: "+rgn);
 	}
 
-	String getSingleInfo(String rgn, String worldName, boolean showWorldName) {
+	public String getSingleInfo(String rgn, String worldName, boolean showWorldName) {
 		String rn = rgn.trim().toLowerCase();
 		Offer offer = getOffer(rn, worldName);
 		return getSingleInfo(offer, showWorldName);
 	}
-	String getSingleInfo( Offer offer, boolean showWorldName){
+	
+	public String getSingleInfo( Offer offer, boolean showWorldName){
 		if ( offer == null) return "";
 		String wn = "";
 		if ( showWorldName ) wn = offer.worldName+" | ";
@@ -1265,7 +1266,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * 
 	 * @param sender
 	 */
-	void showAllOffers(CommandSender sender, String prefix) {
+	public void showAllOffers(CommandSender sender, String prefix) {
 		if ( !showAll && (sender instanceof Player) && !hasPermission((Player)sender, "rbuy.show-all") ){
 			send(sender, "rbuy - Showing all entries is disabled.");
 			return;
@@ -1302,7 +1303,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * Display own offers.
 	 * @param player
 	 */
-	void sendOwnOffers(Player player, String prefix ) {
+	public void sendOwnOffers(Player player, String prefix ) {
 		PlayerInfo info = this.infos.get(player.getName());
 		if ( (info == null) || (info.offers.size() == 0)){
 			send(player, "rbuy - You are not offering any regions for sale.");
@@ -1328,12 +1329,13 @@ public class Rbuy extends JavaPlugin implements Listener{
 	}
 
 	/**
-	 * Call with two or three args (!).
+	 * Call with two or three args (!).<br>
+	 * rbuy.sell is not checked in this method.
 	 * @param player
 	 * @param args
 	 * @return
 	 */
-	boolean processOffer(Player player, String[] args) {
+	public boolean processOffer(Player player, String[] args) {
 		MixinEconomyInterface eco = ecoMixin.getEconomyInterface();
 		String currency = eco.getDefaultCurrency();
 		if ( args.length == 3){
@@ -1403,7 +1405,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		return true;
 	}
 
-	boolean processCancelOffer(Player player, String rgn) {
+	public boolean processCancelOffer(Player player, String rgn) {
 		String wn = player.getWorld().getName();
 		String playerName = player.getName();
 		if ( rgn.equalsIgnoreCase("*")){
@@ -1493,7 +1495,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @param rgn
 	 * @return
 	 */
-	boolean canSellRegion( Player player, String rgn){
+	public boolean canSellRegion( Player player, String rgn){
 		World world = player.getWorld();
 		if (isUnsellable(world.getName(), rgn)) return false;
 		ProtectedRegion region = getRegion(world, rgn);
@@ -1672,7 +1674,13 @@ public class Rbuy extends JavaPlugin implements Listener{
 		return rids.contains(rid.trim().toLowerCase());
 	}
 
-	boolean processBuy(Player player, String regionName) {
+	/**
+	 * rbuy.buy permission is not checked in here !
+	 * @param player
+	 * @param regionName
+	 * @return success of buying
+	 */
+	public boolean processBuy(Player player, String regionName) {
 		long ts = System.currentTimeMillis();
 		regionName = regionName.trim();
 		World world = player.getWorld();
@@ -1780,6 +1788,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 				this.infos.remove(playerName.toLowerCase());
 				changed = true;
 			}
+			return false;
 		}
 		return true;
 	}
@@ -1935,11 +1944,20 @@ public class Rbuy extends JavaPlugin implements Listener{
 		}
 		String secondLine = lines[1].trim().toLowerCase();
 		Offer offer = getOffer(secondLine, player.getWorld().getName());
-		if ( offer == null ){
-			sign.setLine(0, ChatColor.YELLOW+"SOLD!");
-			sign.setLine(2, ChatColor.GRAY+"(probably)");
+		ProtectedRegion region = getRegion(offer);
+		if (region == null || (offer != null && !isExclusiveOwner(offer.benefits, region))){
+			sign.setLine(0, ChatColor.YELLOW+"INVALID!");
+			sign.update();
+			send(player, "rbuy - The offer is invalid.");
+			if (offer != null) removeOffer(offer);
+			return true;
+		}
+		else if ( offer == null ){
+			sign.setLine(0, ChatColor.YELLOW+"INVALID!");
+			sign.setLine(2, ChatColor.GRAY+"(probably sold)");
 			sign.setLine(3, "");
-			send(player, "rbuy - There is no region '"+lines[1]+"' for sale in this world.");
+			sign.update();
+			send(player, "rbuy - The region '"+lines[1]+"' is not for sale in this world.");
 			return true; 
 		} else if (!player.getWorld().getName().equalsIgnoreCase(offer.worldName)){
 			send(player, "rbuy - Buying regions cross-world is not supported (anymore/yet).");
@@ -1985,12 +2003,33 @@ public class Rbuy extends JavaPlugin implements Listener{
 			send(player, "rbuy - The offer is valid.");
 		} else{
 			// process buy: delegates to the command-processing method.
-			processCommand(player, null, "rbuy", new String[]{offer.regionName});
+			if (!hasPermission(player, "rbuy.buy")){
+				player.sendMessage(ChatColor.DARK_RED + "You don't have permission to buy.");
+				return true;
+			}
+			if (processBuy(player, secondLine)){
+				sign.setLine(0, ChatColor.YELLOW+"SOLD!");
+				sign.setLine(2, "to");
+				sign.setLine(3, (player.getName().length()>15)?(player.getName().substring(0,15)):player.getName());
+				sign.update();
+			}
 			// TODO: pop/change sign ?
 		}
 		return true;
 	}
 	
+	/**
+	 * Convenience method.
+	 * @param offer
+	 * @return
+	 */
+	public static ProtectedRegion getRegion(Offer offer) {
+		if (offer == null) return null;
+		World world =Bukkit.getWorld(offer.worldName);
+		if (world == null) return null;
+		return getWorldGuard().getRegionManager(world).getRegion(offer.regionName);
+	}
+
 	public static String getSmallestString(double amount){
 		String out = Double.toString(amount);
 		if (out.endsWith(".0")){ // ...
