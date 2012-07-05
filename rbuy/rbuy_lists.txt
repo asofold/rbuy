@@ -73,6 +73,16 @@ CHANGELOG:
 
 !(add) Logging of region ownership change (!)
 
+erase invalid signs (= >SOLD)
+
+
+
+
+VERSION HISTORY
+---------------------------------------------------------------------------------
+
+(1.1.0)
+- (add) Change sign text for invalid offers.
 
 (1.0.0)
 - (CHANGE) Packet structure.

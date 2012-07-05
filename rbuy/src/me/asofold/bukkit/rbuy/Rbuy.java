@@ -1936,6 +1936,9 @@ public class Rbuy extends JavaPlugin implements Listener{
 		String secondLine = lines[1].trim().toLowerCase();
 		Offer offer = getOffer(secondLine, player.getWorld().getName());
 		if ( offer == null ){
+			sign.setLine(0, ChatColor.YELLOW+"SOLD!");
+			sign.setLine(2, ChatColor.GRAY+"(probably)");
+			sign.setLine(3, "");
 			send(player, "rbuy - There is no region '"+lines[1]+"' for sale in this world.");
 			return true; 
 		} else if (!player.getWorld().getName().equalsIgnoreCase(offer.worldName)){
