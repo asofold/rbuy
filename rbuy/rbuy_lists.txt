@@ -73,8 +73,14 @@ CHANGELOG:
 
 !(add) Logging of region ownership change (!)
 
-erase invalid signs (= >SOLD)
 
+! (add) ebeans support
+! (add) spatial hash based stuff for rinfo
+! (add) make rlist spatial too ?
+! (add) rinfo to show the number of your own offers nearby (if not show own). 
+! (add) rinfo with * => prefixed rinfo like rlist
+! (add) message the player if price is updated for signs. 
+*** check: should or should not and do or do not data get saved on invalidation of offers (signs).
 
 
 
