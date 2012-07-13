@@ -898,7 +898,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 			}
 			boolean all = false;
 			Set<String> worlds = new HashSet<String>();
-			for (int i = 1; i < args.length; i ++){
+			for (int i = 0; i < args.length; i ++){
 				String w = args[i].trim().toLowerCase();
 				if (w.equals("*")) all = true;
 				else worlds.add(w);
