@@ -2012,6 +2012,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 				sign.setLine(2, "to");
 				sign.setLine(3, (player.getName().length()>15)?(player.getName().substring(0,15)):player.getName());
 				sign.update();
+				if (changed) saveData();
 			}
 			// TODO: pop/change sign ?
 		}
