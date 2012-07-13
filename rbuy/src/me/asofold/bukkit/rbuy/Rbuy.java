@@ -371,8 +371,8 @@ public class Rbuy extends JavaPlugin implements Listener{
 	
 	@Override
 	public void onDisable() {
-		this.active = false;
 		this.saveData();
+		this.active = false;
 		System.out.println(this.getPluginDescr()+" is disabled.");
 	}
 
