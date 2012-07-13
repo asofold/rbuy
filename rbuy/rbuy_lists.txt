@@ -83,9 +83,14 @@ CHANGELOG:
 *** check: should or should not and do or do not data get saved on invalidation of offers (signs).
 
 
-
 VERSION HISTORY
 ---------------------------------------------------------------------------------
+
+
+(1.2.0)
+- (add) /rcheckoffers <world> | /rcheckoffers *
+- (bugfix) Save data after buying with  a sign.
+- (bugfix) Save data at shutdown (fall-back).
 
 (1.1.0)
 - (add) Change sign text for invalid offers and bought regions.
