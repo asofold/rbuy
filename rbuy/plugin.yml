@@ -7,23 +7,31 @@ softdepend:
 
 commands:
   rbuy: 
-     description: no descrition available
+     description: 'Buy a region.'
+     usage: '/rbuy <region>'
   rsell: 
-     description: no descrition available
+     description: 'Offer a region for sale, remove own offers, list own offers.'
+     usage: 'Place: /rsell <region> <price> [<currency>] | Remove: /rsell <region> | Remove all: /rsell * | List: /rsell'
   rlist:
-     description: no descrition available
+     description: 'List regions for sale, you can specify a prefix to focus on certain region names.'
+     usage: '/rinfo | /rinfo <prefix>'
   rinfo:
-     description: no descrition available
+     description: 'Get info about nearby offers, or about a specific offer.'
+     usage: '/rinfo | /rinfo <region>'
   rreload:
-     description: no descrition available
+     description: 'Reload the configuration.'
   rhelp:
-     description: no descrition available
+     description: 'Did i implement this?'
   rdisable:
-     description: no descrition available
+     description: 'Disable rbuy.'
   renable:
-     description: no descrition available
+     description: 'Enable rbuy.'
   rremove:
-     description: no descrition available
+     description: 'Remove offers by player, world, region names.'
+     usage: 'use arguments: p:<player> , p:*, w:<world>, w:*, r:<region>, r:*'
   runsellable:
-     description: Toggle if a region is unsellable.
+     description: 'Toggle if a region is unsellable.'
      usage: 'Player: /runsellable <rid> OR Player+Console: /runsellable <world> <rid>'
+  rcheckoffers:
+    description: 'Remove invalid offers, where possible.'
+    usage: '/rcheckoffers <world> | /rcheckoffers *'
