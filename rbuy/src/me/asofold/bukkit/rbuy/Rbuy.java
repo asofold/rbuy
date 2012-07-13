@@ -723,6 +723,8 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 */
 	public boolean processCommand(CommandSender sender, Command command,
 			String label, String[] args) {
+		if (command != null) label = command.getLabel();
+		label = label.toLowerCase();
 		if ( commandsPerSecond > 0 ){
 			long tsCommand = System.currentTimeMillis();
 			if (tsCommand-this.tsCommand <=1000 ){
@@ -889,12 +891,66 @@ public class Rbuy extends JavaPlugin implements Listener{
 			// permission checks are done inside of the method:
 			processUnsellable(sender, world, rid);
 			return true;
+		} else if (label.equalsIgnoreCase("rcheckoffers") && args.length > 0){
+			if ( !hasPermission(sender, "rbuy.checkoffers")){
+				send(sender, "rbuy - You don't have permission.");
+				return false;
+			}
+			boolean all = false;
+			Set<String> worlds = new HashSet<String>();
+			for (int i = 1; i < args.length; i ++){
+				String w = args[i].trim().toLowerCase();
+				if (w.equals("*")) all = true;
+				else worlds.add(w);
+			}
+			int removed = processCheckOffers(worlds, all);
+			sender.sendMessage("[rbuy] Removed " + removed + " offers.");
+			if (changed) saveData();
+			return true;
 		}
 		
 		send(sender, "rbuy - unknown options/command: "+label);
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param worlds Lower case world names.
+	 * @param all If to check all worlds.
+	 * @return
+	 */
+	private int processCheckOffers(Set<String> worlds, boolean all) {
+		List<Offer> rem = new LinkedList<Offer>();
+		WorldGuardPlugin wg = getWorldGuard();
+		for (String w : offers.keySet()){
+			if (!all && !worlds.contains(w)) continue;
+			Map<String, Offer> map = offers.get(w);
+			World world = getServer().getWorld(w);
+			if (world == null){
+				rem.addAll(map.values());
+				continue;
+			}
+			RegionManager man = wg.getRegionManager(world);
+			for (Offer offer : map.values()){
+				ProtectedRegion region = man.getRegion(offer.regionName);
+				if (region == null){
+					rem.add(offer);
+					continue;
+				}
+				if (!isExclusiveOwner(offer.benefits, region)){
+					rem.add(offer);
+					continue;
+				}
+			}
+		}
+		if (rem.isEmpty()) return 0;
+		for (Offer offer : rem){
+			removeOffer(offer);
+		}
+		saveData();
+		return rem.size();
+	}
+
 	public void processUnsellable(CommandSender sender, String worldName,
 			String rid) {
 		worldName = worldName.trim().toLowerCase();
