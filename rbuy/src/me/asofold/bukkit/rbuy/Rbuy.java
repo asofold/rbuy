@@ -672,7 +672,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		for ( String wn : this.offers.keySet()){
 			Map<String, Offer> rMap = this.offers.get(wn);
 			if ( rMap == null) { // IMPOSSIBLE :)
-				getServer().getLogger().severe("rbuy - Concurrent modification of offers while saving.");
+				getServer().getLogger().severe("rbuy - Miraculous modification of offers while saving.");
 				continue;
 			}
 			for ( Offer offer : rMap.values()){
