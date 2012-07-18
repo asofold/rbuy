@@ -12,7 +12,6 @@ NOTES:
 	rbuy.reload
 	rbuy.enable
 	rbuy.disable
-- permissions added in  0.1.0:
 	rbuy.max-buy
 	rbuy.distance-buy
 	rbuy.max-offers
@@ -25,6 +24,7 @@ NOTES:
 	rbuy.info
 	rbuy.all
 	rbuy.offground-signs
+	rbuy.max-regions
 	
 - configuration: ...
 	usersBuy and usersSell is deprecated as of 0.0.1, use ignore-permissions and entries there	
@@ -80,12 +80,20 @@ CHANGELOG:
 ! (add) rinfo to show the number of your own offers nearby (if not show own). 
 ! (add) rinfo with * => prefixed rinfo like rlist
 ! (add) message the player if price is updated for signs. 
+add: lazy saving (delayed)
 *** check: should or should not and do or do not data get saved on invalidation of offers (signs).
+
+?(add) API for buying / selling / placing offers, with possibility not to use command penalty.
+?(add) Command penalty in ms (configurable what for).
+
+!(add) World specific settings (!) [i.e. settings class at all].
 
 
 VERSION HISTORY
 ---------------------------------------------------------------------------------
 
+(1.3.0)
+- (add) max-regions config option + max-regions permission (bypass)
 
 (1.2.0)
 - (add) /rcheckoffers <world> | /rcheckoffers *

@@ -44,6 +44,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 
 import com.sk89q.worldedit.BlockVector;
+import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -309,6 +310,9 @@ public class Rbuy extends JavaPlugin implements Listener{
 	boolean defaultAllowMemberSell = false; // for compatibility
 	boolean allowMemberSell = defaultAllowMemberSell;
 	
+	int defaultMaxRegions = 0;
+	int maxRegions = defaultMaxRegions;
+	
 	/**
 	 * Permissions to ignore: allow by default.
 	 */
@@ -533,6 +537,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		this.useSigns = config.getBoolean("use-signs", defaultUseSigns);
 		this.useWgPerms = config.getBoolean("use-worldguard-perms", defaultUseWgPerms);
 		this.allowMemberSell = config.getBoolean("allow-member-sell", defaultAllowMemberSell);
+		maxRegions = config.getInt("max-regions", defaultMaxRegions);
 		// Some special defaults / checks:
 		if ( this.timeForgetTransaction<0 ) this.timeForgetTransaction = 0;
 		if ( this.timeCountBuy<0 ) this.timeCountBuy = this.timeForgetTransaction;
@@ -577,6 +582,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		config.setProperty("use-bukkit-perms", defaultUseBukkitPerms);
 		config.setProperty("use-signs", defaultUseSigns);
 		config.setProperty("use-worldguard-perms", defaultUseWgPerms);
+		config.set("max-regions", 0);
 		ecoMixin.addDefaultSettings(config, "economy");
 		if ( !config.save()){
 			getServer().getLogger().severe("Rbuy - failed to save default configuration.");
@@ -1820,6 +1826,12 @@ public class Rbuy extends JavaPlugin implements Listener{
 			send(player, "rbuy - You are too far from the region to buy it, you must be within "+this.distanceBuy+" blocks of it.");
 			return false;
 		}
+		if (maxRegions > 0){
+			if (getNumberOfRegions(player) >= maxRegions && !hasPermission(player, "rbuy.max-regions")){
+				send(player, "rbuy - You can not buy more regions (max. "+ maxRegions +").");
+				return false;
+			}
+		}
 		if (ecoMixin.getEconomyInterface().transfer(player, benefits, offer.amount, offer.currency)){
 			setExclusiveOwner(playerName, world,  region);
 			removeOffer(offer);
@@ -1847,6 +1859,17 @@ public class Rbuy extends JavaPlugin implements Listener{
 			return false;
 		}
 		return true;
+	}
+
+	public int getNumberOfRegions(Player player) {
+		int n = 0;
+		WorldGuardPlugin wg = getWorldGuard();
+		LocalPlayer lp = wg.wrapPlayer(player); 
+		for (World world : getServer().getWorlds()){
+			RegionManager man = wg.getRegionManager(world);
+			n += man.getRegionCountOfPlayer(lp);
+		}
+		return n;
 	}
 
 	/**
