@@ -88,6 +88,7 @@ add: lazy saving (delayed)
 
 !(add) World specific settings (!) [i.e. settings class at all].
 
+!(add) info command showing limits.
 
 VERSION HISTORY
 ---------------------------------------------------------------------------------
