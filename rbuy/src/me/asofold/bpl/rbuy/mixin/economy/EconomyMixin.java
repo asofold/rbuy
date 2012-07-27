@@ -1,7 +1,7 @@
 /**
  * Package for copy and paste for simply hooking into economies.
  */
-package me.asofold.bukkit.rbuy.mixin.economy;
+package me.asofold.bpl.rbuy.mixin.economy;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -9,17 +9,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import me.asofold.bukkit.rbuy.compatlayer.CompatConfig;
-import me.asofold.bukkit.rbuy.mixin.MixinPublicInterface;
-import me.asofold.bukkit.rbuy.mixin.economy.impl.BOSEConomy;
-import me.asofold.bukkit.rbuy.mixin.economy.impl.Essentials257;
-import me.asofold.bukkit.rbuy.mixin.economy.impl.IConomy5;
-import me.asofold.bukkit.rbuy.mixin.economy.impl.IConomy6;
-import me.asofold.bukkit.rbuy.mixin.economy.impl.MultiCurrency;
-import me.asofold.bukkit.rbuy.mixin.economy.impl.PluginLibEconomy;
-import me.asofold.bukkit.rbuy.mixin.economy.impl.SimpleEconomy;
-import me.asofold.bukkit.rbuy.mixin.economy.impl.VaultEconomy;
-import me.asofold.bukkit.rbuy.mixin.util.StringPropertyFilter;
+import me.asofold.bpl.rbuy.compatlayer.CompatConfig;
+import me.asofold.bpl.rbuy.mixin.MixinPublicInterface;
+import me.asofold.bpl.rbuy.mixin.economy.impl.BOSEConomy;
+import me.asofold.bpl.rbuy.mixin.economy.impl.Essentials257;
+import me.asofold.bpl.rbuy.mixin.economy.impl.IConomy5;
+import me.asofold.bpl.rbuy.mixin.economy.impl.IConomy6;
+import me.asofold.bpl.rbuy.mixin.economy.impl.MultiCurrency;
+import me.asofold.bpl.rbuy.mixin.economy.impl.PluginLibEconomy;
+import me.asofold.bpl.rbuy.mixin.economy.impl.SimpleEconomy;
+import me.asofold.bpl.rbuy.mixin.economy.impl.VaultEconomy;
+import me.asofold.bpl.rbuy.mixin.util.StringPropertyFilter;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -337,7 +337,7 @@ public class EconomyMixin implements Listener {
 		if (plugin == null ) plugin = this.getEnabledPlugin("PluginLib");
     	if (plugin == null ) {
     		try {
-    			String dummy = me.asofold.bukkit.plshared.Shared.getName() + "("+me.asofold.bukkit.plshared.Shared.getVersion()+")";
+    			String dummy = me.asofold.bpl.plshared.Shared.getName() + "("+me.asofold.bpl.plshared.Shared.getVersion()+")";
     			System.out.println("admittance - found "+dummy+" as non-plugin library.");
     		} catch(Throwable t){
     			return false;

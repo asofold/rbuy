@@ -1,4 +1,4 @@
-package me.asofold.bukkit.rbuy.mixin.economy.impl;
+package me.asofold.bpl.rbuy.mixin.economy.impl;
 
 
 

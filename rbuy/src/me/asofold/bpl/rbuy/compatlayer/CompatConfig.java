@@ -1,4 +1,4 @@
-package me.asofold.bukkit.rbuy.compatlayer;
+package me.asofold.bpl.rbuy.compatlayer;
 
 
 import java.util.List;

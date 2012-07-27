@@ -1,12 +1,12 @@
-package me.asofold.bukkit.rbuy.mixin.economy.impl;
+package me.asofold.bpl.rbuy.mixin.economy.impl;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import me.asofold.bukkit.rbuy.mixin.economy.EconomyMixin;
-import me.asofold.bukkit.rbuy.mixin.economy.MixinEconomyInterface;
-import me.asofold.bukkit.rbuy.mixin.util.MixinUtil;
+import me.asofold.bpl.rbuy.mixin.economy.EconomyMixin;
+import me.asofold.bpl.rbuy.mixin.economy.MixinEconomyInterface;
+import me.asofold.bpl.rbuy.mixin.util.MixinUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

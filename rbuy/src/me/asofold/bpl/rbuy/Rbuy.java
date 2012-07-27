@@ -1,4 +1,4 @@
-package me.asofold.bukkit.rbuy;
+package me.asofold.bpl.rbuy;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import me.asofold.bukkit.rbuy.compatlayer.CompatConfig;
-import me.asofold.bukkit.rbuy.compatlayer.CompatConfigFactory;
-import me.asofold.bukkit.rbuy.mixin.economy.EconomyMixin;
-import me.asofold.bukkit.rbuy.mixin.economy.MixinEconomyInterface;
+import me.asofold.bpl.rbuy.compatlayer.CompatConfig;
+import me.asofold.bpl.rbuy.compatlayer.CompatConfigFactory;
+import me.asofold.bpl.rbuy.mixin.economy.EconomyMixin;
+import me.asofold.bpl.rbuy.mixin.economy.MixinEconomyInterface;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

@@ -1,4 +1,4 @@
-package me.asofold.bukkit.rbuy.mixin.util;
+package me.asofold.bpl.rbuy.mixin.util;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;

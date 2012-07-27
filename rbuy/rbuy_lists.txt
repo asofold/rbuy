@@ -93,6 +93,9 @@ add: lazy saving (delayed)
 VERSION HISTORY
 ---------------------------------------------------------------------------------
 
+(2.0.0)
+- (CHANGE) Packet naming.
+
 (1.3.0)
 - (add) max-regions config option + max-regions permission (bypass)
 

@@ -1,6 +1,6 @@
-package me.asofold.bukkit.rbuy.mixin.economy.impl;
+package me.asofold.bpl.rbuy.mixin.economy.impl;
 
-import me.asofold.bukkit.rbuy.mixin.economy.MixinEconomyInterface;
+import me.asofold.bpl.rbuy.mixin.economy.MixinEconomyInterface;
 
 import org.bukkit.entity.Player;
 
