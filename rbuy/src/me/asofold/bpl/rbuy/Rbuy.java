@@ -14,6 +14,7 @@ import java.util.Set;
 
 import me.asofold.bpl.rbuy.compatlayer.CompatConfig;
 import me.asofold.bpl.rbuy.compatlayer.CompatConfigFactory;
+import me.asofold.bpl.rbuy.compatlayer.ConfigUtil;
 import me.asofold.bpl.rbuy.mixin.economy.EconomyMixin;
 import me.asofold.bpl.rbuy.mixin.economy.MixinEconomyInterface;
 
@@ -469,13 +470,12 @@ public class Rbuy extends JavaPlugin implements Listener{
 	public CompatConfig getCurrentSettings(){
 		if ( this.currentConfig == null){
 			File file = new File(this.getDataFolder(), "rbuy.yml");
+			CompatConfig config = CompatConfigFactory.getConfig(file);
 			if ( file.exists() ){
-				CompatConfig config = CompatConfigFactory.getConfig(file);
 				config.load();
-				this.currentConfig = config;
-			} else{
-				this.setDefaultSettings();
 			}
+			if (ConfigUtil.forceDefaults(getDefaultSettings(), config)) config.save();
+			this.currentConfig = config;
 			this.applySettings();
 		}
 		return this.currentConfig;
@@ -552,10 +552,10 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * Set the defualt configuration and save it.
 	 * applyConfig has to be called (!) for the changes to take effect.
 	 */
-	public void setDefaultSettings() {
+	public CompatConfig getDefaultSettings() {
 		// create and safe default configuration.
-		File file = new File(this.getDataFolder(), "rbuy.yml");
-		CompatConfig config = CompatConfigFactory.getConfig(file);
+//		File file = new File(this.getDataFolder(), "rbuy.yml");
+		CompatConfig config = CompatConfigFactory.getConfig(null);
 		config.setProperty("active", defaultActive);
 		config.setProperty("commands-per-second", defaultCommandsPerSecond);
 		config.setProperty("distance-buy", defaultDistanceBuy);
@@ -582,12 +582,10 @@ public class Rbuy extends JavaPlugin implements Listener{
 		config.setProperty("use-bukkit-perms", defaultUseBukkitPerms);
 		config.setProperty("use-signs", defaultUseSigns);
 		config.setProperty("use-worldguard-perms", defaultUseWgPerms);
+		config.set("allow-member-sell", defaultAllowMemberSell);
 		config.set("max-regions", 0);
 		ecoMixin.addDefaultSettings(config, "economy");
-		if ( !config.save()){
-			getServer().getLogger().severe("Rbuy - failed to save default configuration.");
-		}
-		this.currentConfig = config;
+		return config;
 	}
 	
 //	/**
