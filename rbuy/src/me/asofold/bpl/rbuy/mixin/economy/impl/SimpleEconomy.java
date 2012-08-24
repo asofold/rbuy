@@ -64,7 +64,7 @@ public abstract class SimpleEconomy implements MixinEconomyInterface {
 			// parse on for currency:
 			if (lastIndex <  formatted.length()){
 				for (String candidate : formatted.substring(lastIndex).split(" ")){
-					if (candidate.trim() != ""){
+					if (!"".equals(candidate.trim())){
 						// first one is space, presumably.
 						currencyName = candidate.trim();
 					}
@@ -85,7 +85,7 @@ public abstract class SimpleEconomy implements MixinEconomyInterface {
 						if (lastDot) index = i-1;
 						else index = i;
 						currencyName = part.substring(0, index).trim();
-						if ( currencyName == "" ) return null;
+						if ( "".equals(currencyName)) return null;
 						else return currencyName;
 					} else{
 						lastDot = false;

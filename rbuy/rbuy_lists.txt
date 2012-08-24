@@ -92,6 +92,10 @@ add: lazy saving (delayed)
 
 VERSION HISTORY
 ---------------------------------------------------------------------------------
+
+(2.0.2)
+- (bugfix) Minor bugfixes.
+
 (2.0.1)
 - (adjust) Add all default entries if missing and save back config.
 - (bugfix) Add default configuration entry for allow-member-sell".
