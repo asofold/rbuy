@@ -29,6 +29,7 @@ import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Result;
 import org.bukkit.event.EventHandler;
@@ -42,7 +43,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-
 
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldguard.LocalPlayer;
@@ -333,7 +333,8 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 */
 	String[] cmds = new String[]{
 			"rbuy", "rsell", "rlist", "rinfo", "rhelp", 
-			"rreload", "renable", "rdisable", "rremove"
+			"rreload", "renable", "rdisable", "rremove",
+			"runsellable", "rcheckoffers", 
 		};
 	
 	/**
@@ -406,9 +407,10 @@ public class Rbuy extends JavaPlugin implements Listener{
 		this.reloadSettings();
 		this.loadData();
 
+		TabExecutor tabExe = new RbuyTabExecutor(this);
 		for (String n : this.cmds ){
 			PluginCommand cmd = this.getCommand(n);
-			cmd.setExecutor(this);
+			cmd.setExecutor(tabExe);
 		}
 		
 		// TODO: RuntimeConfig (data)
@@ -450,12 +452,6 @@ public class Rbuy extends JavaPlugin implements Listener{
 			event.setCancelled(true);
 			removeSign(event.getBlock());
 		}
-	}
-	
-	@Override
-	public boolean onCommand(CommandSender sender, Command command,
-			String label, String[] args) {
-		return processCommand(sender, command, label, args);
 	}
 	
 	/**
