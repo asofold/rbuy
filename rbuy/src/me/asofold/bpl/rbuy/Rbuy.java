@@ -1314,8 +1314,23 @@ public class Rbuy extends JavaPlugin implements Listener{
 	public String getSingleInfo( Offer offer, boolean showWorldName){
 		if ( offer == null) return "";
 		String wn = "";
-		if ( showWorldName ) wn = offer.worldName+" | ";
-		return offer.regionName+" ["+wn+offer.amount+" "+offer.currency+" from "+offer.benefits+"]";
+		if (showWorldName ) wn = offer.worldName+" | ";
+		String dim;
+		ProtectedRegion reg = getRegion(offer);
+		if (reg == null){
+			dim = "?x?x? for ";
+		}
+		else{
+			int[] sz = getDimensions(reg);
+			dim = sz[0] + "x" + sz[1] + "x" + sz[2] + " for ";
+		}
+		return offer.regionName + " [" + wn + dim + offer.amount + " " + offer.currency + " from " + offer.benefits + "]";
+	}
+
+	public int[] getDimensions(ProtectedRegion reg) {
+		BlockVector min = reg.getMinimumPoint();
+		BlockVector max = reg.getMaximumPoint();
+		return new int[]{max.getBlockX() - min.getBlockX() + 1, max.getBlockY() - min.getBlockY() + 1, max.getBlockZ() - min.getBlockZ() + 1};
 	}
 
 	/**
