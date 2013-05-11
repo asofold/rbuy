@@ -31,7 +31,7 @@ public class RbuyTabExecutor implements TabExecutor {
 	private final Rbuy plugin;
 	
 	private final Set<String> cmdRegion = getSet(
-			"rbuy", "rsell", "rinfo"
+			"rbuy", "rsell", "rinfo", "rtransfer"
 			);
 
 	public RbuyTabExecutor(final Rbuy plugin){
@@ -71,7 +71,7 @@ public class RbuyTabExecutor implements TabExecutor {
 					res.add(rid);
 				}
 			}
-			else if (label.equals("rinfo")){
+			else if (label.equals("rinfo") || label.equals("rtransfer")){
 				for (ProtectedRegion region : set){
 					String rid = region.getId();
 					if (!rid.toLowerCase().startsWith(arg)) continue;

@@ -1,6 +1,6 @@
 name: rbuy
 main: me.asofold.bpl.rbuy.Rbuy
-version: 2.1.2
+version: 2.2.0
 softdepend:
 - WorldGuard
 - WorldEdit
@@ -35,3 +35,6 @@ commands:
   rcheckoffers:
     description: 'Remove invalid offers, where possible.'
     usage: '/rcheckoffers <world> | /rcheckoffers *'
+  rtransfer:
+    description: 'Transfer ownership and offers to another name (useful for server accounts).'
+    usage: '/<command> <region|prefix*> <new seller> [<old seller> [<world name|*>]]'

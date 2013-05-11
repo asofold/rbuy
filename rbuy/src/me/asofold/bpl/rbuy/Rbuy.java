@@ -10,8 +10,10 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import me.asofold.bpl.plshared.Utils;
 import me.asofold.bpl.rbuy.compatlayer.CompatConfig;
 import me.asofold.bpl.rbuy.compatlayer.CompatConfigFactory;
 import me.asofold.bpl.rbuy.compatlayer.ConfigUtil;
@@ -22,6 +24,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -49,6 +52,7 @@ import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.databases.ProtectionDatabaseException;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
@@ -334,7 +338,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 	String[] cmds = new String[]{
 			"rbuy", "rsell", "rlist", "rinfo", "rhelp", 
 			"rreload", "renable", "rdisable", "rremove",
-			"runsellable", "rcheckoffers", 
+			"runsellable", "rcheckoffers", "rtransfer"
 		};
 	
 	/**
@@ -908,11 +912,100 @@ public class Rbuy extends JavaPlugin implements Listener{
 			if (changed) saveData();
 			return true;
 		}
+		else if (label.equalsIgnoreCase("rtransfer")){
+			if (!hasPermission(sender, "rbuy.transfer")){
+				send(sender, "rbuy - You don't have permission.");
+				return false;
+			}
+			if (!(sender instanceof Player) && args.length < 4 ){
+				// TODO: could be sold by console ...
+				send(sender, "rbuy - Expect a player for using rtransfer with incomplete arguments.");
+				return false;
+			}
+			if (args.length != 2 && args.length != 3 && args.length != 4) return false;
+			processTransfer(args.length == 4 ? args[3] : ((Player) sender).getWorld().getName(), args[0], args[1], args.length == 2 ? sender.getName() : args[2], sender);
+			return true;
+		}
 		
 		send(sender, "rbuy - unknown options/command: "+label);
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @param world
+	 * @param regionName May end on '*' to indicate it being used as a prefix.
+	 * @param newOwnerName 
+	 * @param oldOwnerName
+	 */
+	public void processTransfer(final String worldName, String regionName, final String newOwnerName, final String oldOwnerName, final CommandSender notify){
+		final boolean isPrefix;
+		if (regionName.endsWith("*")){
+			isPrefix = true;
+			regionName = regionName.substring(0, regionName.length() - 1).toLowerCase();
+		}
+		else{
+			isPrefix = false;
+			regionName = regionName.toLowerCase();
+		}
+		final boolean allWorlds = worldName.equals("*");
+		final Server server = getServer();
+		final WorldGuardPlugin wg = Utils.getWorldGuard();
+		// TODO: Consider removing invalid offers here. 
+		int totalDone = 0;
+		for (final Entry<String, Map<String, Offer>> wEntry : offers.entrySet()){
+			final String w = wEntry.getKey();
+			if (!allWorlds && !w.equalsIgnoreCase(worldName)){
+				continue;
+			}
+			final World world = server.getWorld(w);
+			if (w == null){
+				notify.sendMessage("rtransfer: Skip world " + w + ", due to not being loaded.");
+			}
+			final RegionManager man = wg.getRegionManager(world);
+			int transfered = 0;
+			for (final Entry<String, Offer> rEntry : wEntry.getValue().entrySet()){
+				final String rid = rEntry.getKey();
+				if (!(isPrefix && rid.startsWith(regionName)) && !rid.equals(regionName)){
+					continue;
+				}
+				final Offer offer = rEntry.getValue();
+				if (!oldOwnerName.equalsIgnoreCase(offer.benefits)){
+					continue;
+				}
+				final ProtectedRegion region = man.getRegion(rid);
+				if (region == null){
+					continue;
+				}
+				if (!region.isOwner(oldOwnerName)){
+					continue;
+				}
+				// Transfer ownership and offer:
+				final DefaultDomain owners = region.getOwners();
+				owners.removePlayer(oldOwnerName);
+				owners.addPlayer(newOwnerName);
+				offer.benefits = newOwnerName;
+				transfered ++;
+			}
+			if (transfered > 0){
+				// transfered
+				notify.sendMessage("rtransfer: Transfered " + transfered + " regions for world " + world.getName() + ".");
+				try {
+					// TODO: Inefficient.
+					man.save();
+				} catch (ProtectionDatabaseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				totalDone += transfered;
+			}
+		}
+		if (totalDone > 0){
+			saveData();
+		}
+		notify.sendMessage("rtransfer: done.");
+	}
+
 	/**
 	 * 
 	 * @param worlds Lower case world names.
