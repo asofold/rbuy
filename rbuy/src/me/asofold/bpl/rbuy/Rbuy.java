@@ -14,11 +14,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import me.asofold.bpl.plshared.Utils;
-import me.asofold.bpl.rbuy.compatlayer.CompatConfig;
-import me.asofold.bpl.rbuy.compatlayer.CompatConfigFactory;
-import me.asofold.bpl.rbuy.compatlayer.ConfigUtil;
+import me.asofold.bpl.rbuy.command.RbuyTabExecutor;
+import me.asofold.bpl.rbuy.data.Offer;
+import me.asofold.bpl.rbuy.data.PlayerInfo;
+import me.asofold.bpl.rbuy.data.Transaction;
 import me.asofold.bpl.rbuy.mixin.economy.EconomyMixin;
 import me.asofold.bpl.rbuy.mixin.economy.MixinEconomyInterface;
+import me.asofold.bpl.rbuy.settings.compatlayer.CompatConfig;
+import me.asofold.bpl.rbuy.settings.compatlayer.CompatConfigFactory;
+import me.asofold.bpl.rbuy.settings.compatlayer.ConfigUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -67,111 +71,6 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
  *
  */
 public class Rbuy extends JavaPlugin implements Listener{
-	
-	// Classes: 
-		
-	
-	/**
-	 * Represents an offer.
-	 * @author mc_dev
-	 *
-	 */
-	public static final class Offer{
-		/**
-		 * Name of the player who gets the money.
-		 */
-		public String benefits = null;
-		public String regionName = null;
-		public String worldName = null;
-		public double amount = 0;
-		public String currency = null;
-		
-		public boolean fromConfig(CompatConfig config, String prefix){
-			regionName = config.getString(prefix+"regionName", null);
-			if ( regionName == null ) return false;
-			worldName = config.getString(prefix+"worldName", null);
-			if ( worldName == null) return false;
-			benefits = config.getString(prefix+"benefits", null);
-			currency = config.getString(prefix+"currency", null);
-			amount = config.getDouble(prefix+"amount", -1.0);
-			if ( amount < 0) return false;
-			return true;
-		}
-		
-		public void toConfig( CompatConfig config, String prefix){
-			if (regionName == null) return; // set nothing.
-			config.setProperty(prefix+"regionName",	 regionName);
-			if ( worldName == null) return;
-			config.setProperty(prefix+"worldName", worldName);
-			if ( benefits != null){
-				config.setProperty(prefix+"benefits", benefits);
-			}
-			if ( currency != null){
-				config.setProperty(prefix+"currency", currency);
-			}
-			config.setProperty(prefix+"amount", amount);
-		}
-	}
-	
-	public static final class Transaction{
-		public String regionName = null;
-		public String buyerName = null;
-		public String sellerName = null;
-		public double amount = 0;
-		public String currency = null;
-		public long timestamp = 0;
-		public long area = 0;
-		public long volume = 0;
-		public boolean fromConfig(CompatConfig config, String prefix){
-			buyerName = config.getString(prefix+"buyerName", null);
-			sellerName = config.getString(prefix+"sellerName", null);
-			regionName = config.getString(prefix+"regionName", null);
-			amount = config.getDouble(prefix+"amount", 0.0);
-			currency = config.getString(prefix+"currency", null);
-			timestamp = config.getLong(prefix+"timestamp", 0L);
-			area = config.getLong(prefix+"area", 0L);
-			volume = config.getLong( prefix+"volume", area); // preset is area.
-			// TODO: maybe this will change some time:
-			if ( (buyerName == null) ) return false;
-			return true;
-		}
-		
-		public void toConfig( CompatConfig config, String prefix){
-			if ( buyerName != null){
-				config.setProperty(prefix+"buyerName", buyerName);
-			}
-			if ( sellerName != null){
-				config.setProperty(prefix+"sellerName", sellerName);
-			}
-			if ( regionName != null){
-				config.setProperty(prefix+"regionName", regionName);
-			}
-			if ( currency != null){
-				config.setProperty(prefix+"currency", currency);
-			}
-			config.setProperty(prefix+"amount", amount);
-			config.setProperty(prefix+"timestamp", timestamp);
-			config.setProperty(prefix+"area", area);
-			config.setProperty(prefix+"volume", volume);
-		}
-	}
-	
-	/**
-	 * Info about player, basically for limiting the buying and selling.
-	 * @author mc_dev
-	 *
-	 */
-	public static final class PlayerInfo{
-		public String playerName = null;
-		public Collection<Transaction> transactions = new LinkedList<Transaction>();
-		public Collection<Offer> offers = new LinkedList<Offer>();
-		public boolean isEmpty() {
-			return (transactions.isEmpty()&&offers.isEmpty());
-		}
-	}
-
-	
-	
 	
 	// Configuration content: 
 	CompatConfig currentConfig = null;

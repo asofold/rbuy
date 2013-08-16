@@ -261,3 +261,10 @@ MAYBE:
 - ! security settings to avoid tooo long intervals (force setting lower),
 - ? logging to database, reading from there on demand.
 - ? fastest nearby checking: some segmentation thingy ?
+
+sell as server config (!) (auto) + swgt claiming
+
+roadclaim ? [auto naming: _road_north_123] -> auto adapt selection to check highest blocks + margin
+
+playerinfo -> keep track of bids as well. + max-bids parameter.
+

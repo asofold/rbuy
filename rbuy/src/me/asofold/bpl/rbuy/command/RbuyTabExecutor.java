@@ -1,11 +1,12 @@
-package me.asofold.bpl.rbuy;
+package me.asofold.bpl.rbuy.command;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import me.asofold.bpl.rbuy.Rbuy.Offer;
+import me.asofold.bpl.rbuy.Rbuy;
+import me.asofold.bpl.rbuy.data.Offer;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;

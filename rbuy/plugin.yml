@@ -1,6 +1,6 @@
 name: rbuy
 main: me.asofold.bpl.rbuy.Rbuy
-version: 2.2.0
+version: 2.3.0
 softdepend:
 - WorldGuard
 - WorldEdit
@@ -12,6 +12,9 @@ commands:
   rsell: 
      description: 'Offer a region for sale, remove own offers, list own offers.'
      usage: 'Place: /rsell <region> <price> [<currency>] | Remove: /rsell <region> | Remove all: /rsell * | List: /rsell'
+  rauction:
+    description: 'Offer a region for sale by auction, increase your bid, list your bids (rsell lists offers including auctions, removal also over rsell)'
+    usage: '/rauction <region> <time>m|h|d <price> [<currency>] | /rauction <region> <price> | /rauction <region> | /rauction | '
   rlist:
      description: 'List regions for sale, you can specify a prefix to focus on certain region names.'
      usage: '/rinfo | /rinfo <prefix>'

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import me.asofold.bpl.rbuy.compatlayer.CompatConfig;
 import me.asofold.bpl.rbuy.mixin.MixinPublicInterface;
 import me.asofold.bpl.rbuy.mixin.economy.impl.BOSEConomy;
 import me.asofold.bpl.rbuy.mixin.economy.impl.Essentials257;
@@ -20,6 +19,7 @@ import me.asofold.bpl.rbuy.mixin.economy.impl.PluginLibEconomy;
 import me.asofold.bpl.rbuy.mixin.economy.impl.SimpleEconomy;
 import me.asofold.bpl.rbuy.mixin.economy.impl.VaultEconomy;
 import me.asofold.bpl.rbuy.mixin.util.StringPropertyFilter;
+import me.asofold.bpl.rbuy.settings.compatlayer.CompatConfig;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
