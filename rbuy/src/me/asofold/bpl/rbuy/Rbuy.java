@@ -593,8 +593,6 @@ public class Rbuy extends JavaPlugin implements Listener{
 			for ( String key : keys){
 				Offer offer = new Offer();
 				if ( offer.fromConfig(config, prefix+"."+key+".")){
-					PlayerInfo info = getPlayerInfo(offer.benefits); // TODO: check for null
-					info.offers.add(offer);
 					// TODO: check if already in ?
 					putOffer(offer);
 					nOffers++;
@@ -1505,7 +1503,6 @@ public class Rbuy extends JavaPlugin implements Listener{
 		offer.amount = amount;
 		offer.worldName = world.getName();
 		offer.currency = getCurrency(currency);
-		info.offers.add(offer);
 		putOffer(offer); // removes old offer if present.
 		send(player, "rbuy - Placed offer for "+amount+" "+currency+" for: "+rgn);
 		this.changed = true;
@@ -1751,11 +1748,13 @@ public class Rbuy extends JavaPlugin implements Listener{
 	/**
 	 * Put offer to internals, remove old one from internals if existent.
 	 * This does NOT save offers, but sets the changed flag.
-	 * This does NOT add the offer to a PlayerInfo.
+	 * (This adds the offer to a PlayerInfo.)
 	 * @param offer
 	 * @return
 	 */
 	public boolean putOffer(Offer offer){
+		PlayerInfo info = getPlayerInfo(offer.benefits); // TODO: check for null
+		info.offers.add(offer);
 		String worldName = offer.worldName.toLowerCase();
 		String regionName = offer.regionName.toLowerCase();
 		Map<String, Offer> rMap  = this.offers.get(worldName);
