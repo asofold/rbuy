@@ -1,6 +1,9 @@
 package me.asofold.bpl.rbuy.data;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import me.asofold.bpl.rbuy.settings.compatlayer.CompatConfig;
@@ -11,7 +14,7 @@ public class Offer {
 	 * @author mc_dev
 	 *
 	 */
-	public final class Bid {
+	public static final class Bid {
 		public final String name;
 		public double amount;
 		public Bid(String name, double amount) {
@@ -19,6 +22,9 @@ public class Offer {
 			this.amount = amount;
 		}
 	}
+	
+	private static final List<Bid> emptyBids = Collections.unmodifiableList(new LinkedList<Bid>());
+	
 	/**
 	 * Name of the player who gets the money.
 	 */
@@ -96,17 +102,17 @@ public class Offer {
 	 * @param name
 	 * @param amount
 	 * @param maxNumBids
-	 * @return If added.
+	 * @return null if invalid, otherwise a Collection<Bid> of removed bids.
 	 */
-	public boolean addBid(String name, double amount, int maxNumBids) {
+	public Collection<Bid> addBid(String name, double amount, int maxNumBids) {
 		if (amount < this.amount) {
-			return false;
+			return null;
 		}
 		if (bids == null) {
 			bids = new ArrayList<Bid>(Math.min(3, maxNumBids));
 			bids.add(new Bid(name, amount));
 			this.amount = amount;
-			return true;
+			return emptyBids;
 		} else {
 			Bid oldBid = null;
 			for (int i = 0; i < this.bids.size(); i++) {
@@ -126,13 +132,26 @@ public class Offer {
 			} else {
 				bids.add(new Bid(name, amount));
 			}
-			// Check max bids in any case (!).
-			if (bids.size() > maxNumBids) {
-				// Remove the lowest one.
-				bids.remove(0);
-			}
-			return true;
 		}
+		return checkBids(maxNumBids);
+	}
+	
+	/**
+	 * Returns a collection always.
+	 * @param maxNumBids
+	 * @return
+	 */
+	public Collection<Bid> checkBids(int maxNumBids) {
+		if (bids == null || bids.size() <= maxNumBids) {
+			return emptyBids;
+		}
+		final Collection<Bid> removed = new ArrayList<Bid>(bids.size() - maxNumBids);
+		// Check max bids in any case (!).
+		while (bids.size() > maxNumBids) {
+			// Remove the lowest one.
+			removed.add(bids.remove(0));
+		}
+		return removed;
 	}
 	
 	/**
@@ -140,7 +159,7 @@ public class Offer {
 	 * @param name
 	 * @return If previously contained.
 	 */
-	public boolean withdrawBid(String name) {
+	public Bid withdrawBid(String name) {
 		Bid oldBid = null;
 		for (int i = 0; i < this.bids.size(); i++) {
 			Bid bid = bids.get(i);
@@ -154,9 +173,19 @@ public class Offer {
 			if (bids.isEmpty()) {
 				bids = null;
 			}
-			return true;
+			return oldBid;
 		} else {
-			return false;
+			return null;
 		}
+	}
+	
+	public Bid getBid(String name) {
+		for (int i = 0; i < this.bids.size(); i++) {
+			Bid bid = bids.get(i);
+			if (bid.name.equalsIgnoreCase(name)) {
+				return bid;
+			}
+		}
+		return null;
 	}
 }

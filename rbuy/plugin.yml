@@ -5,6 +5,36 @@ softdepend:
 - WorldGuard
 - WorldEdit
 
+permissions:
+  rbuy.filter.command:
+    description: Filter permissions to hide commands from tab completion (incomplete).
+    children:
+      rbuy.filter.command.auction: true
+  rbuy.auction:
+    description: root node for auction commands.
+    children:
+      rbuy.filter.command.auction: true
+      rbuy.auction.create:
+        description: Offer a region by auction.
+        children:
+          rbuy.filter.command.auction: true
+      rbuy.auction.bid:
+        description: Allow to bid.
+        children:
+          rbuy.filter.command.auction: true
+      rbuy.auction.withdrawbid:
+        description: Allow to withdraw bids.
+        children:
+          rbuy.filter.command.auction: true
+      rbuy.auction.cancelauction:
+        description: Allow to cancel auctions.
+        children:
+          rbuy.filter.command.auction: true
+          rbuy.auction.cancelauction.nobids:
+            description: Allow to cancel auctions that have no bids.
+            children:
+              rbuy.filter.command.auction: true
+
 commands:
   rbuy: 
      description: 'Buy a region.'
@@ -14,6 +44,7 @@ commands:
      usage: 'Place: /rsell <region> <price> [<currency>] | Remove: /rsell <region> | Remove all: /rsell * | List: /rsell'
   rauction:
     description: 'Offer a region for sale by auction, increase your bid, list your bids (rsell lists offers including auctions, removal also over rsell)'
+    permission: rbuy.filter.command.auction
     usage: '/rauction <region> <time>m|h|d <price> [<currency>] | /rauction <region> <price> | /rauction <region> | /rauction | '
   rlist:
      description: 'List regions for sale, you can specify a prefix to focus on certain region names.'

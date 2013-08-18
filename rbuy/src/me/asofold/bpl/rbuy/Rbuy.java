@@ -15,11 +15,13 @@ import java.util.Set;
 
 import me.asofold.bpl.plshared.Utils;
 import me.asofold.bpl.rbuy.command.RbuyTabExecutor;
+import me.asofold.bpl.rbuy.command.auction.AuctionCommand;
 import me.asofold.bpl.rbuy.data.Offer;
 import me.asofold.bpl.rbuy.data.PlayerInfo;
 import me.asofold.bpl.rbuy.data.Transaction;
 import me.asofold.bpl.rbuy.mixin.economy.EconomyMixin;
 import me.asofold.bpl.rbuy.mixin.economy.MixinEconomyInterface;
+import me.asofold.bpl.rbuy.settings.RegionFilterSettings;
 import me.asofold.bpl.rbuy.settings.compatlayer.CompatConfig;
 import me.asofold.bpl.rbuy.settings.compatlayer.CompatConfigFactory;
 import me.asofold.bpl.rbuy.settings.compatlayer.ConfigUtil;
@@ -71,6 +73,29 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
  *
  */
 public class Rbuy extends JavaPlugin implements Listener{
+	
+	/**
+	 * Check if r1 is fully inside in r2 (cuboid bounds).
+	 * @param r1
+	 * @param r2
+	 * @return
+	 */
+	public final static boolean isFullyInside(ProtectedRegion r1, ProtectedRegion r2) {
+		// if ( !(r1 instanceof ProtectedCuboidRegion) || !(r2 instanceof ProtectedCuboidRegion) ) return false;
+		BlockVector r1Min = r1.getMinimumPoint();
+		BlockVector r1Max= r1.getMaximumPoint();
+		BlockVector r2Min = r2.getMinimumPoint();
+		BlockVector r2Max= r2.getMaximumPoint();
+		return (r1Min.getBlockX()>=r2Min.getBlockX()) && (r1Max.getBlockX()<=r2Max.getBlockX()) && (r1Min.getBlockY()>=r2Min.getBlockY()) && (r1Max.getBlockY()<=r2Max.getBlockY()) && (r1Min.getBlockZ()>=r2Min.getBlockZ()) && (r1Max.getBlockZ()<=r2Max.getBlockZ());
+	}
+	
+	public static final class EdgeData {
+		public Map<String, Integer> nRestriction = null;
+		public int nTotal = 0;
+		public int nBuy = 0;
+		public long areaBuy = 0L;
+		public long volumeBuy = 0L;
+	}
 	
 	// Configuration content: 
 	CompatConfig currentConfig = null;
@@ -278,6 +303,8 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 */
 	EconomyMixin ecoMixin = new EconomyMixin();
 	
+	final Map<String, Map<String, RegionFilterSettings>> filterSettings = new HashMap<String, Map<String,RegionFilterSettings>>();
+	
 	@Override
 	public void onDisable() {
 		this.saveData();
@@ -315,6 +342,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 			PluginCommand cmd = this.getCommand(n);
 			cmd.setExecutor(tabExe);
 		}
+		getCommand("rauction").setExecutor(new AuctionCommand(this));
 		
 		// TODO: RuntimeConfig (data)
 		
@@ -400,6 +428,22 @@ public class Rbuy extends JavaPlugin implements Listener{
 	public void applySettings() {
 		// apply this.currentConfig to internals
 		CompatConfig config = this.currentConfig;
+		// Read filter settings.
+		filterSettings.clear();
+		for (String worldKey : config.getStringKeys("filter")) {
+			for (String resKey : config.getStringKeys("filter." + worldKey)) {
+				RegionFilterSettings rfs = RegionFilterSettings.fromConfig(config, "filter." + worldKey + "." + resKey + ".");
+				if (rfs != null) {
+					Map<String, RegionFilterSettings> worldMap = filterSettings.get(worldKey.toLowerCase());
+					if (worldMap == null) {
+						worldMap = new HashMap<String, RegionFilterSettings>();
+						filterSettings.put(worldKey.toLowerCase(), worldMap);
+					}
+					worldMap.put(resKey.toLowerCase(), rfs);
+				}
+			}
+		}
+		// ...
 		if (config.getString("users-buy", null) != null ) {
 			getServer().getLogger().warning("rbuy - The configuration entry 'users-buy' is deprecated and has no function. Instead add the entry 'rbuy.buy' to  'ignore-permissions' or set it as a permission for everyone (Further check: rbuy.info, rbuy.list, rbuy.show-all).");
 		}
@@ -1583,73 +1627,104 @@ public class Rbuy extends JavaPlugin implements Listener{
 	}
 	
 	/**
-	 * Number of bought regions within time-count buy, till now.
-	 * @param info
-	 * @param ts time: now.
+	 * Get a new instance.
 	 * @return
 	 */
-	public int getNbuy( PlayerInfo info, long ts){
-		LinkedList<Transaction> rem = new LinkedList<Transaction>();
-		int n = 0;
-		long tsExpireTa = ts - timeForgetTransaction*msDay;
-		long tsExpireBuy = ts - timeCountBuy*msDay;
-		for ( Transaction ta: info.transactions){
-			if ( ta.timestamp < tsExpireTa ) rem.add(ta);
-			else if ( ta.timestamp >= tsExpireBuy) n++;
-		}
-		if ( !rem.isEmpty()){
-			info.transactions.removeAll(rem);
-			this.transactions.removeAll(rem);
-			changed = true;
-		}
-		return n;
+	public RegionFilterSettings getDefaultRegionFilterSettings() {
+		RegionFilterSettings rfs = new RegionFilterSettings();
+		rfs.maxBuy = maxBuy;
+		rfs.timeCountBuy = timeCountBuy;
+		return rfs;
 	}
 	
 	/**
-	 * Get the area of all bought regions within forget-time (bought since).
-	 * @param info
-	 * @param ts time: now.
-	 * @return area
+	 * Test if a transaction is to be counted in.
+	 * @param ta
+	 * @return true if expired
 	 */
-	public long getAreaBuy(PlayerInfo info, long ts){
-		LinkedList<Transaction> rem = new LinkedList<Transaction>();
-		long a = 0;
-		long tsExpireTa = ts - timeForgetTransaction*msDay;
-		long tsExpireBuy = ts - timeCountArea*msDay;
-		for ( Transaction ta: info.transactions){
-			if ( ta.timestamp < tsExpireTa ) rem.add(ta);
-			else if ( ta.timestamp >= tsExpireBuy) a += ta.area;
+	public boolean isBuyExpired(final Transaction ta, final long ts) {
+		int daysExpireBuy = timeCountBuy;
+		if (ta.restrictions != null && ta.worldName != null) {
+			// Regions for which filter settings might exist.
+			final Map<String, RegionFilterSettings> worldMap = filterSettings.get(ta.worldName.toLowerCase());
+			if (worldMap != null) {
+				for (final String regionName : ta.restrictions) {
+					final RegionFilterSettings rfs = worldMap.get(regionName.toLowerCase());
+					if (rfs != null && rfs.timeCountBuy != null) {
+						daysExpireBuy = Math.max(daysExpireBuy, rfs.timeCountBuy);
+					}
+				}
+			}
 		}
-		if ( !rem.isEmpty()){
-			this.transactions.removeAll(rem);
-			info.transactions.removeAll(rem);
-			changed = true;
-		}
-		return a;
+		return ta.timestamp < ts - msDay * (long) daysExpireBuy;
 	}
 	
 	/**
-	 * Get the volume of past transactions for the player (bought regions), with forget-time (bought since).
+	 * Get data such as number of bought regions, area, volume, sold regions.
 	 * @param info
 	 * @param ts
 	 * @return
 	 */
-	public long getVolumeBuy(PlayerInfo info, long ts){
-		// TODO: maybe something against the code cloning?
-		LinkedList<Transaction> rem = new LinkedList<Transaction>();
-		long v = 0;
-		long tsExpireTa = ts - timeForgetTransaction*msDay;
-		long tsExpireBuy = ts - timeCountVolume*msDay;
-		for ( Transaction ta: info.transactions){
-			if ( ta.timestamp < tsExpireTa ) rem.add(ta);
-			else if ( ta.timestamp >= tsExpireBuy) v += ta.volume;
+	public EdgeData getEdgeData(final PlayerInfo info, final long ts) {
+		// re model: check global and per restriction.
+		// TODO: set world name on tas
+		final EdgeData ed = new EdgeData();
+		final LinkedList<Transaction> rem = new LinkedList<Transaction>();
+		// global timestamps
+		final long tsExpireTa = ts - timeForgetTransaction * msDay;
+		final long tsExpireBuy = ts - timeCountBuy * msDay;
+		final long tsExpireArea = ts - timeCountArea * msDay;
+		final long tsExpireVolume = ts - timeCountVolume * msDay;
+		for (Transaction ta: info.transactions){
+			if (ta.timestamp < tsExpireTa) {
+				// Removal of transaction.
+				rem.add(ta);
+			}
+			else {
+				// Global statistics.
+				if (ta.timestamp >= tsExpireBuy) ed.nBuy++;
+				if (ta.timestamp >= tsExpireArea) ed.areaBuy += ta.area;
+				if (ta.timestamp >= tsExpireVolume) ed.volumeBuy += ta.volume;
+				// "Lightly" check restriction (no re-checking regions).
+				if (ta.restrictions != null && ta.worldName != null) {
+					// Regions for which filter settings might exist.
+					final Map<String, RegionFilterSettings> worldMap = filterSettings.get(ta.worldName.toLowerCase());
+					if (worldMap != null) {
+						int presetTimeCountBuy = timeCountBuy;
+						final RegionFilterSettings rfsGlobal = worldMap.get("__global__");
+						if (rfsGlobal != null & rfsGlobal.timeCountBuy != null) {
+							presetTimeCountBuy = rfsGlobal.timeCountBuy;
+						}
+						for (final String regionName : ta.restrictions) {
+							final String lcRid = regionName.toLowerCase();
+							final RegionFilterSettings rfs = worldMap.get(lcRid);
+							if (rfs != null) {
+								if (ta.timestamp >= ts - msDay * (rfs.timeCountBuy == null ? presetTimeCountBuy : rfs.timeCountBuy)) {
+									if (ed.nRestriction == null) {
+										ed.nRestriction = new HashMap<String, Integer>();
+										ed.nRestriction.put(lcRid, 1);
+									} else {
+										final Integer n = ed.nRestriction.get(lcRid);
+										if (n == null) {
+											ed.nRestriction.put(lcRid, 1);
+										} else {
+											ed.nRestriction.put(lcRid, n + 1);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 		if ( !rem.isEmpty()){
 			info.transactions.removeAll(rem);
 			this.transactions.removeAll(rem);
 			changed = true;
 		}
-		return v;
+		ed.nTotal = info.transactions.size();
+		return ed;
 	}
 	
 	/**
@@ -1744,11 +1819,11 @@ public class Rbuy extends JavaPlugin implements Listener{
 	 * @return success of buying
 	 */
 	public boolean processBuy(Player player, String regionName) {
-		long ts = System.currentTimeMillis();
+		final long ts = System.currentTimeMillis();
 		regionName = regionName.trim();
-		World world = player.getWorld();
-		Offer offer = getOffer(regionName, world.getName());
-		if ( offer == null ){
+		final World world = player.getWorld();
+		final Offer offer = getOffer(regionName, world.getName());
+		if (offer == null ){
 			send(player, "rbuy - In this world there is no offer for: "+regionName);
 			return false;
 		}
@@ -1757,37 +1832,31 @@ public class Rbuy extends JavaPlugin implements Listener{
 			removeOffer(offer);
 			return false;
 		}
-		String playerName = player.getName();
+		final String playerName = player.getName();
 		if (playerName.equalsIgnoreCase(offer.benefits)){
 			send(player, "rbuy - Your offer: "+offer.regionName);
 			return false;
 		}
 		
-		PlayerInfo info = getPlayerInfo(playerName);
-		if ( this.maxBuy > 0){
-			if ( (getNbuy(info, ts) >= this.maxBuy) && !hasPermission(player, "rbuy.max-buy")){
-				String msg = "rbuy - You can only buy "+this.maxBuy+" regions";
-				if ( this.maxBuy>0 ) msg += " within "+this.timeCountBuy+" days.";
-				else msg += ".";
-				send(player, msg);
-				return false;
-			}
-		}
-		String benefits = offer.benefits;
-		if ( benefits == null ){
+		final String benefits = offer.benefits;
+		if (benefits == null ){
 			send(player, "rbuy - Expect the name of the seller to be set, to benefit from the transaction.");
 			// TODO: policy / defaultName, anonymous transaction.
 			removeOffer(offer);
 			changed = true;
 			return false;
 		}
-		ProtectedRegion region = getRegion(world, regionName);
-		if ( region == null){
+		final RegionManager man = Utils.getWorldGuard().getRegionManager(world);
+		final ProtectedRegion region = man.getRegion(regionName);
+		if (region == null){
 			send(player, "rbuy - The region seems not to exist in this world: "+regionName);
 			// keep, in case it is diferent managers for different worlds.
 			return false;
 		}
-		if ( !this.canSellRegion(benefits, region)){
+		
+		final PlayerInfo info = getPlayerInfo(playerName);
+		final EdgeData edgeData = getEdgeData(info, ts);
+		if (!this.canSellRegion(benefits, region)){
 			send(player, "rbuy - The player "+benefits+" is not authorized to sell the region: "+regionName);
 			removeOffer(offer);
 			changed = true;
@@ -1805,7 +1874,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		long area =  getArea(region);
 		// check versus boundaries of info:
 		if (this.maxArea > 0){
-			if ( (getAreaBuy(info, ts)+area>this.maxArea) && !hasPermission(player, "rbuy.max-area") ){
+			if ((edgeData.areaBuy + area > this.maxArea) && !hasPermission(player, "rbuy.max-area") ){
 				String msg = "rbuy - The area of the regions bought by you is too big in total";
 				if ( this.timeCountArea == 0 ) msg += "."; // TODO: timeCountBuy/timeCountTransaction
 				else msg += " (counting the last "+ this.timeCountArea+" days).";
@@ -1814,11 +1883,20 @@ public class Rbuy extends JavaPlugin implements Listener{
 			}
 		}
 		long volume = region.volume();
-		if ( this.maxVolume > 0 ){
-			if ( (getVolumeBuy(info, ts)+volume>this.maxVolume) && !hasPermission(player, "rbuy.max-volume") ){
+		if (this.maxVolume > 0 ){
+			if ((edgeData.volumeBuy + volume > this.maxVolume) && !hasPermission(player, "rbuy.max-volume") ){
 				String msg = "rbuy - The volume of the regions bought by you is too big in total";
 				if ( this.timeCountVolume == 0 ) msg += "."; // TODO: timeCountBuy/timeCountTransaction
 				else msg += " (counting the the last "+ this.timeCountVolume+" days).";
+				send(player, msg);
+				return false;
+			}
+		}
+		if (this.maxBuy > 0){
+			if ((edgeData.nBuy >= this.maxBuy) && !hasPermission(player, "rbuy.max-buy")){
+				String msg = "rbuy - You can only buy "+this.maxBuy+" regions";
+				if ( this.maxBuy>0 ) msg += " within "+this.timeCountBuy+" days.";
+				else msg += ".";
 				send(player, msg);
 				return false;
 			}
@@ -1833,11 +1911,58 @@ public class Rbuy extends JavaPlugin implements Listener{
 				return false;
 			}
 		}
+		// Further check world and container-region restrictions.
+		final Map<String, RegionFilterSettings> worldMap = filterSettings.get(world.getName().toLowerCase());
+		List<String> restrictions = null;
+		if (worldMap != null) {
+			//  Check the global region first (whole world).
+			int presetMaxBuy = maxBuy;
+			if (worldMap.containsKey("__global__")) {
+				restrictions = new LinkedList<String>();
+				restrictions.add("__global__");
+				RegionFilterSettings rfs = worldMap.get("__global__");
+				if (rfs.maxBuy != null) {
+					presetMaxBuy = rfs.maxBuy;
+				}
+			}
+			if (worldMap.size() > 1 || restrictions == null) {
+				// Safety check to spare getting all regions for world-only cases.
+				for (final ProtectedRegion otherRegion : man.getRegions().values()){
+					if (region != otherRegion && isFullyInside(region, otherRegion)) {
+						// Candidate for restriction settings.
+						final String otherLcRid = otherRegion.getId().toLowerCase();
+						if (worldMap.containsKey(otherLcRid)) {
+							if (restrictions == null) {
+								restrictions = new LinkedList<String>();
+							}
+							restrictions.add(otherLcRid);
+						}
+					}
+				}
+			}
+			if (restrictions != null) {
+				// Check restrictions.
+				for (final String resKey : restrictions) {
+					Integer nPresent = edgeData.nRestriction != null ? edgeData.nRestriction.get(resKey) : null;
+					if (nPresent == null) {
+						nPresent = 0;
+					}
+					final RegionFilterSettings rfs = worldMap.get(resKey);
+					if ((rfs.maxBuy == null ? presetMaxBuy : rfs.maxBuy) <= nPresent) {
+						// Failed.
+						send(player, "rbuy - You can not buy more regions within " + (resKey.equals("__global__") ? "this world" : "'" + resKey + "'")+ " (max. "+ rfs.maxBuy +").");
+						return false;
+					}
+				}
+			}
+		}
+		
 		if (ecoMixin.getEconomyInterface().transfer(player, benefits, offer.amount, offer.currency)){
 			setExclusiveOwner(playerName, world,  region);
 			removeOffer(offer);
 			Transaction ta = new Transaction();
 			ta.timestamp = ts;
+			ta.worldName = world.getName();
 			ta.regionName = regionName;
 			ta.sellerName = benefits;
 			ta.buyerName = playerName;
@@ -1845,6 +1970,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 			ta.currency = getCurrency(offer.currency);
 			ta.area = area;
 			ta.volume = volume;
+			ta.restrictions = restrictions;
 			this.transactions.add(ta);
 			info.transactions.add(ta);
 			// TODO: policy for the seller ?
