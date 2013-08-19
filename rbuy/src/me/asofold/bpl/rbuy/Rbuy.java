@@ -1,6 +1,7 @@
 package me.asofold.bpl.rbuy;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -2237,9 +2238,14 @@ public class Rbuy extends JavaPlugin implements Listener{
 	}
 
 	public static String getSmallestString(double amount){
-		String out = Double.toString(amount);
-		if (out.endsWith(".0")){ // ...
-			out = out.substring(0, out.length()-2);
+		String out = new DecimalFormat("#.###").format(amount);
+		if (out.indexOf('.') != -1) {
+			while (out.endsWith("0")){ // ...
+				out = out.substring(0, out.length() - 1);
+			}
+			if (out.endsWith(".")) {
+				out = out.substring(0, out.length() - 1);
+			}
 		}
 		return out;
 	}
