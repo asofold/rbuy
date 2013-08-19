@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -2273,7 +2274,12 @@ public class Rbuy extends JavaPlugin implements Listener{
 			setLines = true; // at least set first line to '/rbuy'
 		} else if (magicWordsBuy.contains(firstLine)){
 			/// ok
-		} else return false;
+		} else if (firstLine.equals("/rinfo")) {
+			// TODO: Magic words list.
+			return processInfoSign(event, lines);
+		} else {
+			return false;
+		}
 		Player player = event.getPlayer();
 		if ( !active){
 			send(player, "rbuy - All functionality is disabled temporarily.");
@@ -2395,6 +2401,84 @@ public class Rbuy extends JavaPlugin implements Listener{
 		return false;
 	}
 	
+	private boolean processInfoSign(SignChangeEvent event, String[] lines) {
+		final Block block = event.getBlock();
+		final Player player = event.getPlayer();
+		final Collection<Offer> offers = getOffers(block);
+		String secondLine = lines[1] == null ? "" : lines[1].trim().toLowerCase();
+		boolean prefix = secondLine.endsWith("*") || secondLine.isEmpty();
+		final Iterator<Offer> it = offers.iterator();
+		final String worldName = block.getWorld().getName();
+		Offer lastMatch = null;
+		while (it.hasNext()) {
+			final Offer offer = it.next();
+			if (!worldName.equalsIgnoreCase(offer.worldName)) {
+				it.remove();
+				continue;
+			}
+			if (prefix && offer.regionName.toLowerCase().startsWith(secondLine)) {
+				// Ok.
+			} else if (secondLine.equalsIgnoreCase(offer.regionName)) {
+				// ok.
+			} else {
+				it.remove();
+				continue;
+			}
+			// Set.
+			lastMatch = offer;
+		}
+		if (offers.isEmpty()) {
+			player.sendMessage(ChatColor.RED + "No offers at this position.");
+			return true;
+		} else if (offers.size() > 1)  {
+			String of = "";
+			for (Offer offer : offers) {
+				of += " " + offer.regionName;
+			}
+			player.sendMessage(ChatColor.RED + "Multiple offers: " + of);
+			return true;
+		} else {
+			// Fill in sign.
+			lines[0] = "/rbuy";
+			secondLine = lastMatch.regionName;
+			if (secondLine.length() > 15) {
+				secondLine = secondLine.substring(0, 14) + "*";
+			}
+			lines[1] = secondLine;
+			lines[2] = getSmallestString(lastMatch.amount);
+			if (lines[2].length() > 15) {
+				player.sendMessage(ChatColor.RED + "Amount does not fit on the sign: " + lines[2]);
+				return true;
+			}
+			lines[3] = getCurrency(lastMatch.currency);
+			if (lines[3].length() > 15) {
+				lines[3] = lines[3].substring(0, 15);
+			}
+			for (int i = 0; i < 4 ; i++) {
+				event.setLine(i, lines[i]);
+			}
+			return false;
+		}
+	}
+	
+	public Collection<Offer> getOffers(Block block) {
+		// Could sue a stored Location instance.
+		return getOffers(block.getLocation());
+	}
+
+	public Collection<Offer> getOffers(final Location loc) {
+		final List<Offer> offers = new LinkedList<Offer>();
+		final World world = loc.getWorld();
+		final String worldName = world.getName();
+		for (final ProtectedRegion region : Utils.getWorldGuard().getRegionManager(world).getApplicableRegions(loc)) {
+			final Offer offer = getOffer(region.getId(), worldName);
+			if (offer != null) {
+				offers.add(offer);
+			}
+		}
+		return offers;
+	}
+
 	/**
 	 * Ensure currency is set: return currency (no change) or default currency if currency is null.
 	 * @param currency
