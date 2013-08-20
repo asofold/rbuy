@@ -1691,7 +1691,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 					if (worldMap != null) {
 						int presetTimeCountBuy = timeCountBuy;
 						final RegionFilterSettings rfsGlobal = worldMap.get("__global__");
-						if (rfsGlobal != null & rfsGlobal.timeCountBuy != null) {
+						if (rfsGlobal != null && rfsGlobal.timeCountBuy != null) {
 							presetTimeCountBuy = rfsGlobal.timeCountBuy;
 						}
 						for (final String regionName : ta.restrictions) {
