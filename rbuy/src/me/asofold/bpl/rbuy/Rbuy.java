@@ -2176,7 +2176,9 @@ public class Rbuy extends JavaPlugin implements Listener{
 		String fourthLine = lines[3].trim();
 		try{
 			double amount = Double.parseDouble(thirdLine);
-			if (amount != offer.amount) setFromOffer = true;
+			if (Math.abs(amount - offer.amount) > 0.001) {
+				setFromOffer = true;
+			}
 		} catch (NumberFormatException e){
 			setFromOffer = true;
 		}
@@ -2203,7 +2205,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 				return true;
 			}
 			sign.setLine(3, currency);
-			send(player, "rbuy - Updated the price, right-click to buy.");
+			send(player, "rbuy - Updated the price, right-click to buy or type '/rbuy " + region.getId() + "'.");
 			sign.update();
 			return true;
 		} else if (isOwner){
