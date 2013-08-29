@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import me.asofold.bpl.plshared.Utils;
 import me.asofold.bpl.rbuy.command.RbuyTabExecutor;
 import me.asofold.bpl.rbuy.command.auction.AuctionCommand;
 import me.asofold.bpl.rbuy.data.Offer;
@@ -893,7 +892,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		}
 		final boolean allWorlds = worldName.equals("*");
 		final Server server = getServer();
-		final WorldGuardPlugin wg = Utils.getWorldGuard();
+		final WorldGuardPlugin wg = getWorldGuard();
 		// TODO: Consider removing invalid offers here. 
 		int totalDone = 0;
 		for (final Entry<String, Map<String, Offer>> wEntry : offers.entrySet()){
@@ -1847,7 +1846,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 			changed = true;
 			return false;
 		}
-		final RegionManager man = Utils.getWorldGuard().getRegionManager(world);
+		final RegionManager man = getWorldGuard().getRegionManager(world);
 		final ProtectedRegion region = man.getRegion(regionName);
 		if (region == null){
 			send(player, "rbuy - The region seems not to exist in this world: "+regionName);
@@ -2472,7 +2471,7 @@ public class Rbuy extends JavaPlugin implements Listener{
 		final List<Offer> offers = new LinkedList<Offer>();
 		final World world = loc.getWorld();
 		final String worldName = world.getName();
-		for (final ProtectedRegion region : Utils.getWorldGuard().getRegionManager(world).getApplicableRegions(loc)) {
+		for (final ProtectedRegion region : getWorldGuard().getRegionManager(world).getApplicableRegions(loc)) {
 			final Offer offer = getOffer(region.getId(), worldName);
 			if (offer != null) {
 				offers.add(offer);
